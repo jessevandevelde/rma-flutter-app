@@ -42,18 +42,21 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 40),
                 const Text(
-                  'Email Address',
+                  'Email',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
-                    hintText: 'e.g. name@company.com',
+                    hintText: 'name@company.com',
+                    hintStyle: TextStyle(
+                      color: Colors.grey,
+                    ),
                     prefixIcon: Icon(Icons.email_outlined),
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -81,6 +84,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     hintText: '••••••••',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                    ),
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
