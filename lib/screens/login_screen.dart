@@ -11,6 +11,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -21,9 +22,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      // In a real app, you'd talk to a server here.
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Login')),
+        const SnackBar(content: Text('Processing Login...')),
       );
     }
   }
@@ -31,54 +31,143 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Login'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(
+            'pictures/dmglogo.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+        title: const Text(
+          'Login',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 30,
+          ),
+        ),
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 20),
+                const Text(
+                  'Email',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    hintText: 'name@company.com',
+                    hintStyle: TextStyle(
+                      color: Colors.grey,
+                    ),
+                    prefixIcon: Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
+                const SizedBox(height: 20),
+                const Text(
+                  'Password',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-                child: const Text('Login'),
-              ),
-            ],
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                    hintText: '••••••••',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                    ),
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF1A56DB),
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: () {},
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A56DB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Log In',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
