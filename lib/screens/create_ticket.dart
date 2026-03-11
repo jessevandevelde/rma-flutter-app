@@ -5,6 +5,7 @@ void main() => runApp(MaterialApp(home: CreateTicketScreen()));
 class CreateTicketScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    bool _isChecked = false;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -20,47 +21,57 @@ class CreateTicketScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- COMPANY INFORMATION ---
-            _buildSectionHeader(Icons.business_outlined, 'Bedrijf informatie'),
+            _buildSectionHeader(Icons.business_outlined, ''),
             SizedBox(height: 15),
-            _buildLabel('Bedrijf naam'),
-            _buildTextField('Bedrijfsnaam'),
+            _buildLabel('Intro Text'),
+            _buildTextField(''),
             SizedBox(height: 15),
-            _buildLabel('Contact Persoon'),
-            _buildTextField('Volledige naam'),
-
-            SizedBox(height: 30),
-
-            // --- TICKET DETAILS ---
-            _buildSectionHeader(Icons.description_outlined, 'TICKET DETAILS'),
+            _buildLabel('Bekijk het reparatieproces'),
+            _buildTextField(''),
             SizedBox(height: 15),
-            _buildLabel('Probleem Title'),
-            _buildTextField('Korte samenvatting van het probleem'),
+            _buildLabel('Model / Type'),
+            _buildTextField('For example: CF-XXXXXX or FZ-XXXXXX'),
             SizedBox(height: 15),
-            _buildLabel('Probleem omschrijving'),
-            _buildTextField('Beschrijf het probleem in detail....', maxLines: 5),
+            _buildLabel('Serienummer'),
+            _buildTextField('Please enter a serial number'),
+            SizedBox(height: 15),
+            _buildLabel('Beschrijving van het probleem'),
+            _buildTextField('Beschrijf het probleem zo gedetailleerd mogelijk.'),
+            SizedBox(height: 15),
+            _buildLabel('Probleemfrequentie'),
+            _buildTextField(''),
+            SizedBox(height: 15),
+            _buildLabel('Vermoedelijke oorzaak'),
+            _buildTextField(''),
+            SizedBox(height: 15),
+            _buildLabel('Symptonen'),
+            _buildTextField(''),
+            SizedBox(height: 15),
+            _buildLabel('Persoonlijke gegevens'),
+            _buildTextField(''),
+            SizedBox(height: 15),
+            _buildLabel('Uw bedrijfsnaam'),
+            _buildTextField('Voer een bedrijfsnaam in'),
+            SizedBox(height: 15),
+            _buildLabel('Jouw telefoonnummer'),
+            _buildTextField('Voer een telefoonnummer in'),
+            SizedBox(height: 15),
+            _buildLabel('Ophaaldatum'),
+            _buildTextField(''),
 
-            SizedBox(height: 20),
 
-            // --- Image picker ---
-            Row(
-              children: [
-                // --- Waar de images komen ---
-                // _buildAddPhotoButton(),
-                // SizedBox(width: 10),
-                // _buildImagePreview(''),
-                // SizedBox(width: 10),
-                // _buildImagePreview(''),
-              ],
+            Checkbox(
+              value: _isChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  _isChecked = value!;
+                });
+              },
+              controlAffinity: ListTileControlAffinity.leading,
             ),
+            _buildTextField ("Ik erken en ga ermee akkoord dat mijn apparaat tijdens het reparatieproces mogelijk wordt gewist of dat de gegevens ervan worden verwijderd. Ik begrijp dat deze maatregel noodzakelijk is om een effectieve reparatie te garanderen en mijn privacy en veiligheid te beschermen.<br>Ik heb een back-up gemaakt van alle noodzakelijke gegevens en begrijp dat Dragon Media Group / Toughbookparts niet verantwoordelijk is voor enig gegevensverlies dat zich tijdens het reparatieproces kan voordoen"),
 
-            SizedBox(height: 20),
 
-            // --- Button voor upload ---
-            _buildUploadDocumentsButton(),
-
-            SizedBox(height: 40),
-
-            // --- Submit button ---
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -125,25 +136,4 @@ class CreateTicketScreen extends StatelessWidget {
       ),
     );
   }
-
-  // "Upload Documents" knop
-  Widget _buildUploadDocumentsButton() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 15),
-      decoration: BoxDecoration(
-        color: Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.file_present_outlined, color: Colors.blueGrey),
-          SizedBox(width: 10),
-          Text('Upload Documents', style: TextStyle(color: Colors.blueGrey[700], fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
   }
-}
