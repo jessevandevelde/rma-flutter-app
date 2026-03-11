@@ -38,19 +38,35 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
 
-      if (response != null && response.statusCode == 200) {
+      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
         // Succesvolle login
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login succesvol!')),
+            const SnackBar(
+              content: Text('Login succesvol!'),
+              backgroundColor: Colors.green,
+            ),
           );
-          // Navigeer hier naar het volgende scherm
+
+          // REDIRECT: Gebruik pushReplacementNamed zodat de gebruiker
+          // niet terug kan naar de login met de back-button.
+          Navigator.pushReplacementNamed(context, '/create-ticket');
         }
       } else {
         // Login mislukt
         if (mounted) {
+          String errorMsg = "Onbekende fout";
+          if (response?.data != null && response?.data['message'] != null) {
+            errorMsg = response?.data['message'];
+          } else if (response?.statusMessage != null) {
+            errorMsg = response!.statusMessage!;
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Login mislukt: ${response?.statusMessage ?? "Onbekende fout"}')),
+            SnackBar(
+              content: Text('Login mislukt: $errorMsg'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -69,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Image.asset(
             'pictures/dmglogo.png',
             fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Colors.black),
           ),
         ),
         title: const Text(
@@ -103,9 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _emailController,
                   decoration: const InputDecoration(
                     hintText: 'name@company.com',
-                    hintStyle: TextStyle(
-                      color: Colors.grey,
-                    ),
+                    hintStyle: TextStyle(color: Colors.grey),
                     prefixIcon: Icon(Icons.person_outline),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -114,15 +129,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
+                    if (value == null || value.isEmpty) return 'Voer aub een email in';
+                    if (!value.contains('@')) return 'Voer een geldig emailadres in';
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Password',
+                  'Wachtwoord',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -135,9 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     hintText: '••••••••',
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade400,
-                    ),
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -145,9 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -157,9 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
+                    if (value == null || value.isEmpty) return 'Voer aub een wachtwoord in';
                     return null;
                   },
                 ),
@@ -170,13 +178,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.zero,
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    // Wachtwoord vergeten logica
+                  },
                   child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    'Wachtwoord vergeten?',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -189,20 +196,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    disabledBackgroundColor: Colors.grey,
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
                       : const Text(
-                          'Log In',
-                          style: TextStyle(fontSize: 18),
-                        ),
+                    'Log In',
+                    style: TextStyle(fontSize: 18),
+                  ),
                 ),
               ],
             ),
