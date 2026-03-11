@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rma_app/classes/authenticatie.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,7 +12,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final Authenticatie _authService = Authenticatie();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -20,11 +23,37 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Login...')),
+      setState(() {
+        _isLoading = true;
+      });
+
+      final response = await _authService.login(
+        _emailController.text,
+        _passwordController.text,
       );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response != null && response.statusCode == 200) {
+        // Succesvolle login
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login succesvol!')),
+          );
+          // Navigeer hier naar het volgende scherm
+        }
+      } else {
+        // Login mislukt
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Login mislukt: ${response?.statusMessage ?? "Onbekende fout"}')),
+          );
+        }
+      }
     }
   }
 
@@ -152,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _login,
+                  onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A56DB),
                     foregroundColor: Colors.white,
@@ -161,10 +190,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Log In',
-                    style: TextStyle(fontSize: 18),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Log In',
+                          style: TextStyle(fontSize: 18),
+                        ),
                 ),
               ],
             ),
