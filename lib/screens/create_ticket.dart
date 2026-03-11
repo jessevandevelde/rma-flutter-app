@@ -6,6 +6,8 @@ class CreateTicketScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool _isChecked = false;
+    dynamic setState;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -59,17 +61,23 @@ class CreateTicketScreen extends StatelessWidget {
             _buildLabel('Ophaaldatum'),
             _buildTextField(''),
 
+            
 
-            Checkbox(
+            CheckboxListTile(
+              title: Text(
+                "Ik erken en ga ermee akkoord dat mijn apparaat tijdens het reparatieproces mogelijk wordt gewist of dat de gegevens ervan worden verwijderd. Ik begrijp dat deze maatregel noodzakelijk is om een effectieve reparatie te garanderen en mijn privacy en veiligheid te beschermen.\n\n"
+                    "Ik heb een back-up gemaakt van alle noodzakelijke gegevens en begrijp dat Dragon Media Group / Toughbookparts niet verantwoordelijk is voor enig gegevensverlies dat zich tijdens het reparatieproces kan voordoen.",
+                style: TextStyle(fontSize: 14),
+              ),
               value: _isChecked,
               onChanged: (bool? value) {
                 setState(() {
-                  _isChecked = value!;
+                  _isChecked = value ?? false;
                 });
               },
               controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
             ),
-            _buildTextField ("Ik erken en ga ermee akkoord dat mijn apparaat tijdens het reparatieproces mogelijk wordt gewist of dat de gegevens ervan worden verwijderd. Ik begrijp dat deze maatregel noodzakelijk is om een effectieve reparatie te garanderen en mijn privacy en veiligheid te beschermen.<br>Ik heb een back-up gemaakt van alle noodzakelijke gegevens en begrijp dat Dragon Media Group / Toughbookparts niet verantwoordelijk is voor enig gegevensverlies dat zich tijdens het reparatieproces kan voordoen"),
 
 
             SizedBox(
@@ -78,7 +86,7 @@ class CreateTicketScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF007AFF), // Blauwe kleur van foto
+                  backgroundColor: Color(0xFF007AFF), // Blauwe kleur
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 ),
                 child: Row(
