@@ -48,9 +48,8 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
 
-          // REDIRECT: Gebruik pushReplacementNamed zodat de gebruiker
-          // niet terug kan naar de login met de back-button.
-          Navigator.pushReplacementNamed(context, '/create-ticket');
+          // REDIRECT: Naar de ticket-overview pagina
+          Navigator.pushReplacementNamed(context, '/ticket-overview');
         }
       } else {
         // Login mislukt
