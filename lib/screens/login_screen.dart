@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rma_app/classes/authenticatie.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,7 +12,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final Authenticatie _authService = Authenticatie();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -20,11 +23,52 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Login...')),
+      setState(() {
+        _isLoading = true;
+      });
+
+      final response = await _authService.login(
+        _emailController.text,
+        _passwordController.text,
       );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+        // Succesvolle login
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login succesvol!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // REDIRECT: Naar de ticket-overview pagina
+          Navigator.pushReplacementNamed(context, '/ticket-overview');
+        }
+      } else {
+        // Login mislukt
+        if (mounted) {
+          String errorMsg = "Onbekende fout";
+          if (response?.data != null && response?.data['message'] != null) {
+            errorMsg = response?.data['message'];
+          } else if (response?.statusMessage != null) {
+            errorMsg = response!.statusMessage!;
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login mislukt: $errorMsg'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -40,6 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Image.asset(
             'pictures/dmglogo.png',
             fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Colors.black),
           ),
         ),
         title: const Text(
@@ -74,9 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _emailController,
                   decoration: const InputDecoration(
                     hintText: 'name@company.com',
-                    hintStyle: TextStyle(
-                      color: Colors.grey,
-                    ),
+                    hintStyle: TextStyle(color: Colors.grey),
                     prefixIcon: Icon(Icons.person_outline),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -85,15 +128,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
+                    if (value == null || value.isEmpty) return 'Voer aub een email in';
+                    if (!value.contains('@')) return 'Voer een geldig emailadres in';
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Password',
+                  'Wachtwoord',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -106,9 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     hintText: '••••••••',
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade400,
-                    ),
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -116,9 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -128,9 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
+                    if (value == null || value.isEmpty) return 'Voer aub een wachtwoord in';
                     return null;
                   },
                 ),
@@ -141,18 +177,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.zero,
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    // Wachtwoord vergeten logica
+                  },
                   child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    'Wachtwoord vergeten?',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _login,
+                  onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A56DB),
                     foregroundColor: Colors.white,
@@ -160,8 +195,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    disabledBackgroundColor: Colors.grey,
                   ),
-                  child: const Text(
+                  child: _isLoading
+                      ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : const Text(
                     'Log In',
                     style: TextStyle(fontSize: 18),
                   ),
