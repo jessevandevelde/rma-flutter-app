@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(MaterialApp(home: CreateTicketScreen()));
-
 class CreateTicketScreen extends StatefulWidget {
+  const CreateTicketScreen({super.key});
+
   @override
   State<CreateTicketScreen> createState() => _CreateTicketScreenState();
 }
@@ -12,10 +12,16 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the scanned code from the arguments
+    final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('Ticket aanmaken',
             style: TextStyle(
                 color: Colors.black87, fontWeight: FontWeight.bold)),
@@ -28,8 +34,30 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (scannedCode != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.qr_code, color: Colors.blue),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text('Gescannde code: $scannedCode',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.blue)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
             // --- COMPANY INFORMATION ---
-            _buildSectionHeader(Icons.business_outlined, ''),
+            _buildSectionHeader(Icons.business_outlined, 'Informatie'),
             const SizedBox(height: 15),
             _buildLabel('Intro Text'),
             _buildTextField(''),
@@ -44,7 +72,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             _buildTextField('Please enter a serial number'),
             const SizedBox(height: 15),
             _buildLabel('Beschrijving van het probleem'),
-            _buildTextField('Beschrijf het probleem zo gedetailleerd mogelijk.'),
+            _buildTextField('Beschrijf het probleem zo gedetailleerd mogelijk.',
+                maxLines: 3),
             const SizedBox(height: 15),
             _buildLabel('Probleemfrequentie'),
             _buildTextField(''),
@@ -91,11 +120,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: _isChecked
-                    ? () {
-                        print("Ticket submitted");
-                      }
-                    : null, // Knop is uitgeschakeld als _isChecked false is
+                onPressed: _isChecked ? () {
+                  // Submit logica hier
+                } : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isChecked ? const Color(0xFF007AFF) : Colors.grey,
                   shape: RoundedRectangleBorder(
