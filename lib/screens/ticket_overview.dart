@@ -11,14 +11,14 @@ class TicketOverview extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () async {
-            // 1. Navigate to the Scanner Page and wait for the result
+            // 1. Open de scanner en wacht op het resultaat
             final String? barcodeValue = await Navigator.of(context).push<String>(
               MaterialPageRoute(
                 builder: (context) => const BarcodeScannerPage(),
               ),
             );
 
-            // 2. If we got a barcode, redirect to create-ticket with the info
+            // 2. Als we een code hebben, ga naar create-ticket
             if (barcodeValue != null && context.mounted) {
               Navigator.pushNamed(
                 context,
@@ -34,23 +34,38 @@ class TicketOverview extends StatelessWidget {
   }
 }
 
-class BarcodeScannerPage extends StatelessWidget {
+class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
+
+  @override
+  State<BarcodeScannerPage> createState() => _BarcodeScannerPageState();
+}
+
+class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
+  // Deze variabele zorgt ervoor dat we maar één keer reageren op een scan
+  bool _isScanCompleted = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Scan Ticket')),
-      // 2. MobileScanner fills the screen
       body: MobileScanner(
         onDetect: (capture) {
+          if (_isScanCompleted) return;
+
           final List<Barcode> barcodes = capture.barcodes;
           for (final barcode in barcodes) {
-            debugPrint('Barcode found! ${barcode.rawValue}');
+            if (barcode.rawValue != null) {
+              setState(() {
+                _isScanCompleted = true;
+              });
 
-            // close the scanner and return the value
-            Navigator.of(context).pop(barcode.rawValue);
-            break;
+              debugPrint('Barcode gevonden! ${barcode.rawValue}');
+
+              // Sluit de scanner en geef de waarde terug
+              Navigator.of(context).pop(barcode.rawValue);
+              break;
+            }
           }
         },
       ),
