@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(MaterialApp(home: CreateTicketScreen()));
-
 class CreateTicketScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Get the scanned code from the arguments
+    final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: Icon(Icons.arrow_back_ios, color: Colors.black87),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text('Ticket aanmaken', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -19,6 +23,24 @@ class CreateTicketScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (scannedCode != null) ...[
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.qr_code, color: Colors.blue),
+                    SizedBox(width: 10),
+                    Text('Gescannde code: $scannedCode', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+            ],
+
             // --- COMPANY INFORMATION ---
             _buildSectionHeader(Icons.business_outlined, 'Bedrijf informatie'),
             SizedBox(height: 15),
@@ -41,20 +63,6 @@ class CreateTicketScreen extends StatelessWidget {
 
             SizedBox(height: 20),
 
-            // --- Image picker ---
-            Row(
-              children: [
-                // --- Waar de images komen ---
-                // _buildAddPhotoButton(),
-                // SizedBox(width: 10),
-                // _buildImagePreview(''),
-                // SizedBox(width: 10),
-                // _buildImagePreview(''),
-              ],
-            ),
-
-            SizedBox(height: 20),
-
             // --- Button voor upload ---
             _buildUploadDocumentsButton(),
 
@@ -67,7 +75,7 @@ class CreateTicketScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF007AFF), // Blauwe kleur van foto
+                  backgroundColor: Color(0xFF007AFF),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 ),
                 child: Row(
@@ -85,7 +93,6 @@ class CreateTicketScreen extends StatelessWidget {
     );
   }
 
-  // Helper om sectie titels te bouwen
   Widget _buildSectionHeader(IconData icon, String title) {
     return Row(
       children: [
@@ -96,7 +103,6 @@ class CreateTicketScreen extends StatelessWidget {
     );
   }
 
-  // Helper voor labels boven de velden
   Widget _buildLabel(String text) {
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
@@ -104,7 +110,6 @@ class CreateTicketScreen extends StatelessWidget {
     );
   }
 
-  // Helper voor text input velden
   Widget _buildTextField(String hint, {int maxLines = 1}) {
     return TextField(
       maxLines: maxLines,
@@ -126,7 +131,6 @@ class CreateTicketScreen extends StatelessWidget {
     );
   }
 
-  // "Upload Documents" knop
   Widget _buildUploadDocumentsButton() {
     return Container(
       width: double.infinity,

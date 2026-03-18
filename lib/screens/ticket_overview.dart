@@ -10,13 +10,22 @@ class TicketOverview extends StatelessWidget {
       appBar: AppBar(title: const Text('Ticket Overzicht')),
       body: Center(
         child: ElevatedButton(
-          onPressed: () {
-            // 1. Navigate to the Scanner Page
-            Navigator.of(context).push(
+          onPressed: () async {
+            // 1. Navigate to the Scanner Page and wait for the result
+            final String? barcodeValue = await Navigator.of(context).push<String>(
               MaterialPageRoute(
                 builder: (context) => const BarcodeScannerPage(),
               ),
             );
+
+            // 2. If we got a barcode, redirect to create-ticket with the info
+            if (barcodeValue != null && context.mounted) {
+              Navigator.pushNamed(
+                context,
+                '/create-ticket',
+                arguments: barcodeValue,
+              );
+            }
           },
           child: const Text('Bevestig Ticket'),
         ),
@@ -39,7 +48,7 @@ class BarcodeScannerPage extends StatelessWidget {
           for (final barcode in barcodes) {
             debugPrint('Barcode found! ${barcode.rawValue}');
 
-            // 3. Close the scanner and return the value
+            // close the scanner and return the value
             Navigator.of(context).pop(barcode.rawValue);
             break;
           }
