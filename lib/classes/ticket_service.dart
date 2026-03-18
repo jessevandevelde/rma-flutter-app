@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-class Authenticatie {
+class TicketService {
   late final Dio _dio;
 
-  Authenticatie() {
-    // We gaan terug naar de basisinstelling die voorheen werkte.
+  TicketService() {
+    // 10.0.2.2 is the address to access localhost from the Android Emulator
     const String baseUrl = 'http://10.0.2.2:8000';
 
     _dio = Dio(BaseOptions(
@@ -17,23 +17,17 @@ class Authenticatie {
         'Accept': 'application/json',
       },
     ));
-
-    debugPrint('Authenticatie geinitialiseerd op: $baseUrl');
   }
 
-  Future<Response?> login(String email, String password) async {
+  Future<Response?> submitTicket(Map<String, dynamic> ticketData) async {
     try {
       final response = await _dio.post(
-        '/api/auth/login',
-        data: {
-          'email': email,
-          'password': password,
-        },
+        '/api/tickets',
+        data: ticketData,
       );
       return response;
     } on DioException catch (e) {
-      debugPrint('Login fout: ${e.message}');
-      // We geven de response terug als die er is, anders gooien we de error door
+      debugPrint('Ticket submit error: ${e.message}');
       if (e.response != null) return e.response;
       rethrow;
     }
