@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,9 +22,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      // In a real app, you'd talk to a server here.
+      // Voor nu accepteren we elke invoer als "succesvol"
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Login')),
+        const SnackBar(content: Text('Inloggen geslaagd!')),
+      );
+
+      // Navigeer naar het hoofdscherm
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const HomeScreen(),
+        ),
       );
     }
   }
@@ -41,16 +49,22 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const Text(
+                'Welkom terug',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 32),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
-                  labelText: 'Email',
+                  labelText: 'E-mailadres',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
+                    return 'Voer aub een e-mailadres in';
                   }
                   return null;
                 },
@@ -59,13 +73,14 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFormField(
                 controller: _passwordController,
                 decoration: const InputDecoration(
-                  labelText: 'Password',
+                  labelText: 'Wachtwoord',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
+                    return 'Voer aub een wachtwoord in';
                   }
                   return null;
                 },
@@ -76,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
                 ),
-                child: const Text('Login'),
+                child: const Text('Inloggen'),
               ),
             ],
           ),
