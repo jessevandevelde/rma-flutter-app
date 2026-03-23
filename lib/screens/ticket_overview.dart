@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/support_request.dart';
-import 'new_request_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class TicketOverview extends StatefulWidget {
+  const TicketOverview({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<TicketOverview> createState() => _TicketOverviewState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _TicketOverviewState extends State<TicketOverview> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _searchQuery = '';
-  
-  // De lijst met requests die we op het dashboard tonen
+
+  // De lijst met tickets die we op de overview tonen (nu gebaseerd op de home screen data)
   final List<SupportRequest> _requests = [
     SupportRequest(
       title: 'Broken Laptop Screen',
@@ -59,7 +59,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  // Filter de lijst op basis van de zoekopdracht
   List<SupportRequest> get _filteredRequests {
     if (_searchQuery.isEmpty) {
       return _requests;
@@ -67,21 +66,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return _requests.where((request) {
       final searchLower = _searchQuery.toLowerCase();
       return request.title.toLowerCase().contains(searchLower) ||
-             request.ticketId.toLowerCase().contains(searchLower) ||
-             request.category.toLowerCase().contains(searchLower);
+          request.ticketId.toLowerCase().contains(searchLower) ||
+          request.category.toLowerCase().contains(searchLower);
     }).toList();
   }
 
-  void _addNewRequest() async {
-    final SupportRequest? newRequest = await Navigator.push<SupportRequest>(
-      context,
-      MaterialPageRoute(builder: (context) => const NewRequestScreen()),
+  void _scanNewTicket() async {
+    final String? barcodeValue = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) => const BarcodeScannerPage(),
+      ),
     );
 
-    if (newRequest != null) {
-      setState(() {
-        _requests.insert(0, newRequest);
-      });
+    if (barcodeValue != null && mounted) {
+      Navigator.pushNamed(
+        context,
+        '/create-ticket',
+        arguments: barcodeValue,
+      );
     }
   }
 
@@ -153,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addNewRequest,
+        onPressed: _scanNewTicket,
         backgroundColor: const Color(0xFF2962FF),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('New Request', style: TextStyle(color: Colors.white)),
@@ -164,7 +166,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildRequestList() {
     final filtered = _filteredRequests;
-    
     if (filtered.isEmpty) {
       return Center(
         child: Column(
@@ -173,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
-              'No requests found for "$_searchQuery"',
+              'No requests found',
               style: TextStyle(color: Colors.grey[600]),
             ),
           ],
@@ -283,6 +284,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class BarcodeScannerPage extends StatefulWidget {
+  const BarcodeScannerPage({super.key});
+
+  @override
+  State<BarcodeScannerPage> createState() => _BarcodeScannerPageState();
+}
+
+class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
+  bool _isScanCompleted = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Scan Ticket')),
+      body: MobileScanner(
+        onDetect: (capture) {
+          if (_isScanCompleted) return;
+
+          final List<Barcode> barcodes = capture.barcodes;
+          for (final barcode in barcodes) {
+            if (barcode.rawValue != null) {
+              setState(() {
+                _isScanCompleted = true;
+              });
+              Navigator.of(context).pop(barcode.rawValue);
+              break;
+            }
+          }
+        },
       ),
     );
   }
