@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
+import '../components/custom_button.dart';
+import '../components/custom_label.dart';
+import '../components/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,7 +42,6 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
-        // Succesvolle login
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -47,12 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: Colors.green,
             ),
           );
-
-          // REDIRECT: Naar de ticket-overview pagina
           Navigator.pushReplacementNamed(context, '/ticket-overview');
         }
       } else {
-        // Login mislukt
         if (mounted) {
           String errorMsg = "Onbekende fout";
           if (response?.data != null && response?.data['message'] != null) {
@@ -106,15 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                const Text(
-                  'Email',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                const CustomLabel(text: 'Email'),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -134,15 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Wachtwoord',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                const CustomLabel(text: 'Wachtwoord'),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
@@ -177,39 +160,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.zero,
                   ),
-                  onPressed: () {
-                    // Wachtwoord vergeten logica
-                  },
+                  onPressed: () {},
                   child: const Text(
                     'Wachtwoord vergeten?',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A56DB),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    disabledBackgroundColor: Colors.grey,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                      : const Text(
-                    'Log In',
-                    style: TextStyle(fontSize: 18),
-                  ),
+                CustomButton(
+                  text: 'Log In',
+                  onPressed: _login,
+                  isLoading: _isLoading,
                 ),
               ],
             ),
