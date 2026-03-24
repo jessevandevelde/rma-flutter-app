@@ -1,26 +1,5 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const SupportChatApp());
-}
-
-class SupportChatApp extends StatelessWidget {
-  const SupportChatApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Support Chat',
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF3F4F6),
-        fontFamily: 'Arial',
-      ),
-      home: const SupportChatPage(),
-    );
-  }
-}
-
 class SupportChatPage extends StatefulWidget {
   const SupportChatPage({super.key});
 
@@ -33,24 +12,9 @@ class _SupportChatPageState extends State<SupportChatPage> {
 
   final List<ChatMessage> _messages = [
     ChatMessage(
-      text:
-      "Hello! I'm Alex from the maintenance team. I see you've reported an issue with the HVAC in Zone B. Could you describe the noise you're hearing?",
+      text: "Hello! I'm Alex from the support team. How can I help you with your ticket today?",
       isMe: false,
       time: "10:40 AM",
-    ),
-    ChatMessage(
-      text:
-      "Hi Alex, it sounds like a heavy metallic grinding every time the compressor kicks in. It's quite loud in the main hallway.",
-      isMe: true,
-      time: "10:42 AM",
-    ),
-    ChatMessage(
-      text:
-      "Understood. That sounds like it could be the fan motor or a bearing issue. Does the unit look like this one on the roof?",
-      isMe: false,
-      time: "10:43 AM",
-      imageUrl:
-      "https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&fit=crop&w=800&q=80",
     ),
   ];
 
@@ -80,93 +44,78 @@ class _SupportChatPageState extends State<SupportChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Get ticketId from arguments
+    final String? ticketId = ModalRoute.of(context)?.settings.arguments as String?;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF3F4F6),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF2563EB)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Support Chat",
+              style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            if (ticketId != null)
+              Text(
+                "Ticket ID: $ticketId",
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+          ],
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            const ChatHeader(),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                children: [
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE9EDF2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        "TODAY",
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF8A94A6),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ..._messages.map((message) => ChatBubble(message: message)),
-                ],
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                itemCount: _messages.length,
+                itemBuilder: (context, index) {
+                  return ChatBubble(message: _messages[index]);
+                },
               ),
             ),
-            ChatInputBar(
-              controller: _controller,
-              onSend: _sendMessage,
-            ),
+            _buildInputBar(),
           ],
         ),
       ),
     );
   }
-}
 
-class ChatHeader extends StatelessWidget {
-  const ChatHeader({super.key});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildInputBar() {
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFE5E7EB),
-            width: 1,
-          ),
-        ),
-      ),
+      padding: const EdgeInsets.all(12),
+      color: Colors.white,
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () {},
-            child: const Text(
-              "‹Back",
-              style: TextStyle(
-                color: Color(0xFF2563EB),
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                hintText: "Type a message...",
+                filled: true,
+                fillColor: const Color(0xFFF3F4F6),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               ),
             ),
           ),
-          const Spacer(),
-          const Text(
-            "Alex Thompson",
-            style: TextStyle(
-              color: Color(0xFF111827),
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.send, color: Color(0xFF2563EB)),
+            onPressed: _sendMessage,
           ),
-          const Spacer(),
-          const SizedBox(width: 48),
         ],
       ),
     );
@@ -175,198 +124,60 @@ class ChatHeader extends StatelessWidget {
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
-
-  const ChatBubble({
-    super.key,
-    required this.message,
-  });
+  const ChatBubble({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
-    final bubbleColor =
-    message.isMe ? const Color(0xFF2563EB) : const Color(0xFFEAECEF);
-
-    final textColor = message.isMe ? Colors.white : const Color(0xFF1F2937);
-
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment:
-        message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: message.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment:
-            message.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (!message.isMe) ...[
-                const CircleAvatar(
-                  radius: 14,
-                  backgroundImage: NetworkImage(
-                    "https://i.pravatar.cc/100?img=32",
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Flexible(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 250),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: bubbleColor,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message.text,
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 16,
-                          height: 1.4,
-                        ),
-                      ),
-                      if (message.imageUrl != null) ...[
-                        const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            message.imageUrl!,
-                            height: 140,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              if (message.isMe) ...[
-                const SizedBox(width: 8),
-                const CircleAvatar(
-                  radius: 14,
-                  backgroundImage: NetworkImage(
-                    "https://i.pravatar.cc/100?img=12",
-                  ),
-                ),
-              ],
-            ],
-          ),
-          Padding(
-            padding: EdgeInsets.only(
-              top: 4,
-              left: message.isMe ? 0 : 36,
-              right: message.isMe ? 36 : 0,
+          if (!message.isMe)
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.blue,
+              child: Icon(Icons.person, color: Colors.white, size: 20),
             ),
-            child: Text(
-              message.time,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF9CA3AF),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: message.isMe ? const Color(0xFF2563EB) : Colors.white,
+                borderRadius: BorderRadius.circular(15),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ChatInputBar extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onSend;
-
-  const ChatInputBar({
-    super.key,
-    required this.controller,
-    required this.onSend,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
-      color: Colors.white,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      hintText: "Type a message...",
-                      border: InputBorder.none,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.text,
+                    style: TextStyle(
+                      color: message.isMe ? Colors.white : Colors.black87,
+                      fontSize: 15,
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: onSend,
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2563EB),
-                    shape: BoxShape.circle,
+                  const SizedBox(height: 4),
+                  Text(
+                    message.time,
+                    style: TextStyle(
+                      color: message.isMe ? Colors.white70 : Colors.black45,
+                      fontSize: 10,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.send_rounded,
-                    color: Colors.white,
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 10),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              BottomActionItem(icon: Icons.camera_alt_outlined, label: "Camera"),
-              BottomActionItem(icon: Icons.image_outlined, label: "Gallery"),
-              BottomActionItem(icon: Icons.insert_drive_file_outlined, label: "Document"),
-            ],
-          ),
+          const SizedBox(width: 8),
+          if (message.isMe)
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.grey,
+              child: Icon(Icons.person, color: Colors.white, size: 20),
+            ),
         ],
       ),
-    );
-  }
-}
-
-class BottomActionItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const BottomActionItem({
-    super.key,
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: const Color(0xFF94A3B8)),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF94A3B8),
-            fontSize: 13,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -375,12 +186,5 @@ class ChatMessage {
   final String text;
   final bool isMe;
   final String time;
-  final String? imageUrl;
-
-  ChatMessage({
-    required this.text,
-    required this.isMe,
-    required this.time,
-    this.imageUrl,
-  });
+  ChatMessage({required this.text, required this.isMe, required this.time});
 }
