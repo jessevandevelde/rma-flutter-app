@@ -5,8 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="839e4d3f-bcd4-4d3f-a43c-4f841da77410" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/screens/ticket_overview.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/components/custom_button.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/components/custom_label.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/components/custom_text_field.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/components/section_header.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/create_ticket.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/create_ticket.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/login_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/login_screen.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,10 +34,6 @@
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 6
 }</component>
-  <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 6
-}</component>
   <component name="ProjectId" id="3AnMOabf238hRCgQwX82iaSVi1M" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -51,7 +51,7 @@
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "qr-code-scanner",
+    "git-widget-placeholder": "component-based-programming",
     "ignore.virus.scanning.warn.message": "true",
     "io.flutter.project.isFirstOpen": "true",
     "io.flutter.reload.alreadyRun": "true",
