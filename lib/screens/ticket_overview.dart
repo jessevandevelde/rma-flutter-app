@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/support_request.dart';
+import '../components/support_request_card.dart';
+import '../components/custom_search_bar.dart';
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
@@ -13,7 +15,6 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
   late TabController _tabController;
   String _searchQuery = '';
 
-  // De lijst met tickets die we op de overview tonen (nu gebaseerd op de home screen data)
   final List<SupportRequest> _requests = [
     SupportRequest(
       title: 'Broken Laptop Screen',
@@ -35,16 +36,6 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       icon: Icons.vpn_key_outlined,
       iconColor: Colors.orange,
     ),
-    SupportRequest(
-      title: 'Keyboard Issue',
-      category: 'Keyboard',
-      description: 'Multiple keys are not responding.',
-      date: 'Submitted: Sep 10, 2023',
-      ticketId: '#USR-8956',
-      status: 'NEED INFO',
-      icon: Icons.keyboard_alt_outlined,
-      iconColor: Colors.orange,
-    ),
   ];
 
   @override
@@ -60,9 +51,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
   }
 
   List<SupportRequest> get _filteredRequests {
-    if (_searchQuery.isEmpty) {
-      return _requests;
-    }
+    if (_searchQuery.isEmpty) return _requests;
     return _requests.where((request) {
       final searchLower = _searchQuery.toLowerCase();
       return request.title.toLowerCase().contains(searchLower) ||
@@ -100,6 +89,11 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.bug_report, color: Colors.red),
+            tooltip: 'Dev: Open Chat',
+            onPressed: () => Navigator.pushNamed(context, '/support-chat', arguments: '#DEV-1234'),
+          ),
+          IconButton(
             icon: const Icon(Icons.account_circle_outlined, color: Colors.black87),
             onPressed: () {},
           ),
@@ -107,42 +101,17 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       ),
       body: Column(
         children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: 'Search by title, ID or category',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-            ),
+          CustomSearchBar(
+            hintText: 'Search by title, ID or category',
+            onChanged: (value) => setState(() => _searchQuery = value),
           ),
-          // Tabs
           TabBar(
             controller: _tabController,
             labelColor: Colors.blue[700],
-            unselectedLabelColor: Colors.grey,
             indicatorColor: Colors.blue[700],
-            indicatorSize: TabBarIndicatorSize.tab,
-            tabs: const [
-              Tab(text: 'Active'),
-              Tab(text: 'Past'),
-            ],
+            tabs: const [Tab(text: 'Active'), Tab(text: 'Past')],
           ),
           const Divider(height: 1),
-          // Tab Content
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -173,10 +142,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
           children: [
             Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
-            Text(
-              'No requests found',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
+            Text('No requests found', style: TextStyle(color: Colors.grey[600])),
           ],
         ),
       );
@@ -186,105 +152,17 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       padding: const EdgeInsets.all(16),
       itemCount: filtered.length,
       itemBuilder: (context, index) {
-        return _buildRequestCard(filtered[index]);
+        return SupportRequestCard(
+          request: filtered[index],
+          onViewDetails: () {
+            Navigator.pushNamed(
+              context, 
+              '/support-chat', 
+              arguments: filtered[index].ticketId
+            );
+          },
+        );
       },
-    );
-  }
-
-  Widget _buildRequestCard(SupportRequest request) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: request.iconColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(request.icon, color: request.iconColor, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        request.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A237E),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        request.date,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50]!.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    request.status,
-                    style: TextStyle(
-                      color: Colors.blue[800],
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Ticket ID: ${request.ticketId}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Row(
-                    children: [
-                      Text(
-                        'View Details',
-                        style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                      ),
-                      Icon(Icons.chevron_right, color: Colors.blue, size: 18),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -306,13 +184,10 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
       body: MobileScanner(
         onDetect: (capture) {
           if (_isScanCompleted) return;
-
           final List<Barcode> barcodes = capture.barcodes;
           for (final barcode in barcodes) {
             if (barcode.rawValue != null) {
-              setState(() {
-                _isScanCompleted = true;
-              });
+              setState(() => _isScanCompleted = true);
               Navigator.of(context).pop(barcode.rawValue);
               break;
             }

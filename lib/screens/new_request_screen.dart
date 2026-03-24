@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import '../models/support_request.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
+import '../models/support_request.dart';
+import '../components/custom_button.dart';
+import '../components/custom_text_field.dart';
+import '../components/custom_label.dart';
 
 class NewRequestScreen extends StatefulWidget {
   const NewRequestScreen({super.key});
@@ -27,7 +30,6 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
 
   void _submitRequest() {
     if (_formKey.currentState!.validate()) {
-      // Bepaal icoon op basis van categorie
       IconData icon;
       Color iconColor;
       
@@ -49,7 +51,6 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
           iconColor = Colors.green;
       }
 
-      // Maak een nieuw SupportRequest object aan
       final newRequest = SupportRequest(
         title: _titleController.text,
         category: _selectedCategory,
@@ -61,7 +62,6 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
         iconColor: iconColor,
       );
 
-      // Stuur het nieuwe object terug naar het vorige scherm
       Navigator.of(context).pop(newRequest);
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,8 +98,7 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
-              const Text('Category', style: TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
+              const CustomLabel(text: 'Category'),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 decoration: InputDecoration(
@@ -123,58 +122,30 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
                 },
               ),
               const SizedBox(height: 20),
-              const Text('Title', style: TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              TextFormField(
+              const CustomLabel(text: 'Title'),
+              CustomTextField(
                 controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Short summary of the issue',
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
+                hint: 'Short summary of the issue',
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Please enter a title';
                   return null;
                 },
               ),
               const SizedBox(height: 20),
-              const Text('Description', style: TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              TextFormField(
+              const CustomLabel(text: 'Description'),
+              CustomTextField(
                 controller: _descriptionController,
                 maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: 'Provide as much detail as possible',
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
+                hint: 'Provide as much detail as possible',
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Please enter a description';
                   return null;
                 },
               ),
               const SizedBox(height: 32),
-              ElevatedButton(
+              CustomButton(
+                text: 'Submit Request',
                 onPressed: _submitRequest,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2962FF),
-                  minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Submit Request',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
               ),
             ],
           ),
