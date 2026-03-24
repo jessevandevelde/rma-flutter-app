@@ -68,7 +68,7 @@
         <entry key="flutter">
           <value>
             <list>
-              <option value="$USER_HOME$/flutter/packages/flutter/lib" />
+              <option value="$USER_HOME$/Downloads/flutter/packages/flutter/lib" />
             </list>
           </value>
         </entry>

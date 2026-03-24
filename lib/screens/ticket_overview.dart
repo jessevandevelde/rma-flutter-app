@@ -1,35 +1,168 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../models/support_request.dart';
+import '../components/support_request_card.dart';
+import '../components/custom_search_bar.dart';
 
-class TicketOverview extends StatelessWidget {
+class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
+
+  @override
+  State<TicketOverview> createState() => _TicketOverviewState();
+}
+
+class _TicketOverviewState extends State<TicketOverview> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  String _searchQuery = '';
+
+  final List<SupportRequest> _requests = [
+    SupportRequest(
+      title: 'Broken Laptop Screen',
+      category: 'Laptop',
+      description: 'Screen is cracked after a fall.',
+      date: 'Submitted: Oct 12, 2023',
+      ticketId: '#USR-8942',
+      status: 'NEED INFO',
+      icon: Icons.laptop_chromebook,
+      iconColor: Colors.blue,
+    ),
+    SupportRequest(
+      title: 'Password Reset Issue',
+      category: 'Password/Access',
+      description: 'Cannot login to the portal.',
+      date: 'Submitted: Oct 14, 2023',
+      ticketId: '#USR-8955',
+      status: 'NEED INFO',
+      icon: Icons.vpn_key_outlined,
+      iconColor: Colors.orange,
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  List<SupportRequest> get _filteredRequests {
+    if (_searchQuery.isEmpty) return _requests;
+    return _requests.where((request) {
+      final searchLower = _searchQuery.toLowerCase();
+      return request.title.toLowerCase().contains(searchLower) ||
+          request.ticketId.toLowerCase().contains(searchLower) ||
+          request.category.toLowerCase().contains(searchLower);
+    }).toList();
+  }
+
+  void _scanNewTicket() async {
+    final String? barcodeValue = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) => const BarcodeScannerPage(),
+      ),
+    );
+
+    if (barcodeValue != null && mounted) {
+      Navigator.pushNamed(
+        context,
+        '/create-ticket',
+        arguments: barcodeValue,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ticket Overzicht')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            // 1. Open de scanner en wacht op het resultaat
-            final String? barcodeValue = await Navigator.of(context).push<String>(
-              MaterialPageRoute(
-                builder: (context) => const BarcodeScannerPage(),
-              ),
-            );
-
-            // 2. Als we een code hebben, ga naar create-ticket
-            if (barcodeValue != null && context.mounted) {
-              Navigator.pushNamed(
-                context,
-                '/create-ticket',
-                arguments: barcodeValue,
-              );
-            }
-          },
-          child: const Text('Bevestig Ticket'),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'My Support Requests',
+          style: TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report, color: Colors.red),
+            tooltip: 'Dev: Open Chat',
+            onPressed: () => Navigator.pushNamed(context, '/support-chat', arguments: '#DEV-1234'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined, color: Colors.black87),
+            onPressed: () {},
+          ),
+        ],
       ),
+      body: Column(
+        children: [
+          CustomSearchBar(
+            hintText: 'Search by title, ID or category',
+            onChanged: (value) => setState(() => _searchQuery = value),
+          ),
+          TabBar(
+            controller: _tabController,
+            labelColor: Colors.blue[700],
+            indicatorColor: Colors.blue[700],
+            tabs: const [Tab(text: 'Active'), Tab(text: 'Past')],
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildRequestList(),
+                const Center(child: Text('Past Requests')),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _scanNewTicket,
+        backgroundColor: const Color(0xFF2962FF),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('New Request', style: TextStyle(color: Colors.white)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      ),
+    );
+  }
+
+  Widget _buildRequestList() {
+    final filtered = _filteredRequests;
+    if (filtered.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text('No requests found', style: TextStyle(color: Colors.grey[600])),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filtered.length,
+      itemBuilder: (context, index) {
+        return SupportRequestCard(
+          request: filtered[index],
+          onViewDetails: () {
+            Navigator.pushNamed(
+              context,
+              '/support-chat',
+              arguments: filtered[index].ticketId
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -42,7 +175,6 @@ class BarcodeScannerPage extends StatefulWidget {
 }
 
 class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
-  // Deze variabele zorgt ervoor dat we maar één keer reageren op een scan
   bool _isScanCompleted = false;
 
   @override
@@ -52,17 +184,11 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
       body: MobileScanner(
         onDetect: (capture) {
           if (_isScanCompleted) return;
-
           final List<Barcode> barcodes = capture.barcodes;
           for (final barcode in barcodes) {
             if (barcode.rawValue != null) {
-              setState(() {
-                _isScanCompleted = true;
-              });
-
+              setState(() => _isScanCompleted = true);
               debugPrint('Barcode gevonden! ${barcode.rawValue}');
-
-              // Sluit de scanner en geef de waarde terug
               Navigator.of(context).pop(barcode.rawValue);
               break;
             }
