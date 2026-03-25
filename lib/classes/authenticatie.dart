@@ -7,19 +7,8 @@ class Authenticatie {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Authenticatie() {
-    // Haal de APP_MODE op (bijv. via --dart-define=APP_MODE=prod)
-    const String mode = String.fromEnvironment('APP_MODE', defaultValue: 'dev');
-
-    // Bepaal de baseUrl op basis van de modus
-    String baseUrl;
-    if (mode == 'prod') {
-      baseUrl = 'https://api.jouwproductieurl.com';
-    } else if (mode == 'staging') {
-      baseUrl = 'https://api.staging.com';
-    } else {
-      // Gebruik 10.0.2.2 voor Android emulators of 127.0.0.1 voor iOS/Web
-      baseUrl = 'http://127.0.0.1:8000';
-    }
+    // We gaan terug naar de basisinstelling die voorheen werkte.
+    const String baseUrl = 'http://10.0.2.2:8000';
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
@@ -67,7 +56,9 @@ class Authenticatie {
       return response;
     } on DioException catch (e) {
       debugPrint('Login fout: ${e.message}');
-      return e.response;
+      // We geven de response terug als die er is, anders gooien we de error door
+      if (e.response != null) return e.response;
+      rethrow;
     }
   }
 
