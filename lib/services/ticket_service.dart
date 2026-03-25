@@ -1,34 +1,54 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TicketService {
-  // 10.0.2.2 is het adres om de localhost van je computer te bereiken vanuit de Android Emulator.
-  // Gebruik 'localhost' als je de iOS simulator gebruikt.
-  static const String _baseUrl = 'http://10.0.2.2:8000/api';
+  late final Dio _dio;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  TicketService() {
+    // 10.0.2.2 is the address to access localhost from the Android Emulator
+    const String baseUrl = 'http://10.0.2.2:8000';
+
+    _dio = Dio(BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    ));
+
+    // Voeg een interceptor toe om de token automatisch aan elke request toe te voegen
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final token = await _storage.read(key: 'auth_token');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+    ));
+  }
 
   Future<bool> createTicket(Map<String, dynamic> ticketData) async {
     try {
-      // We proberen /api/tickets aan te roepen (meest gebruikelijk in Laravel)
-      final response = await http.post(
-        Uri.parse('$_baseUrl/ticket'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json', // Dit zorgt ervoor dat Laravel JSON terugstuurt bij errors
-        },
-        body: jsonEncode(ticketData),
+      final response = await _dio.post(
+        '/api/ticket',
+        data: ticketData,
       );
-
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       } else {
-        // Als je hier een 405 error krijgt, check dan je routes/api.php op de backend.
         return false;
       }
-    } catch (e) {
-      print('Fout bij aanmaken ticket: $e');
+    } on DioException catch (e) {
+      debugPrint('Fout bij aanmaken ticket: ${e.message}');
+      if (e.response != null) {
+        debugPrint('Response data: ${e.response?.data}');
+      }
       return false;
     }
   }
