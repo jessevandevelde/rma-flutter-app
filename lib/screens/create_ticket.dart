@@ -48,6 +48,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     setState(() => _isLoading = true);
 
     final Map<String, dynamic> ticketData = {
+      'ticket_type_id': 1, // Added mandatory field. Adjust this ID based on your backend.
       'scannedCode': scannedCode,
       'intro': _introController.text,
       'repair_process': _repairProcessController.text,
@@ -221,7 +222,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               Text('Succes'),
             ],
           ),
-          content: const Text('Uw ticket is succesvol aangemaakt! (Simulatie)'),
+          content: const Text('Uw ticket is succesvol aangemaakt!'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
