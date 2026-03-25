@@ -121,7 +121,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               height: 55,
               child: ElevatedButton(
                 onPressed: _isChecked ? () {
-                  // Submit logica hier
+                  _showSuccessDialog();
                 } : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isChecked ? const Color(0xFF007AFF) : Colors.grey,
@@ -141,6 +141,35 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 10),
+              Text('Succes'),
+            ],
+          ),
+          content: const Text('Uw ticket is succesvol aangemaakt! (Simulatie)'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Sluit de dialoog
+                Navigator.of(context).pop(); // Ga terug naar het vorige scherm
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
