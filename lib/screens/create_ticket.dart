@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../components/section_header.dart';
-import '../components/custom_label.dart';
-import '../components/custom_text_field.dart';
+import '../core/constants/app_colors.dart';
 
 class CreateTicketScreen extends StatelessWidget {
   const CreateTicketScreen({super.key});
@@ -9,71 +7,59 @@ class CreateTicketScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundGray,
       appBar: AppBar(
+        backgroundColor: AppColors.pureWhite,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Ticket aanmaken',
-            style:
-                TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
+        title: const Text(
+          'Ticket aanmaken',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- COMPANY INFORMATION ---
-            const SectionHeader(
-                icon: Icons.business_outlined, title: 'Bedrijf informatie'),
+            _buildSectionHeader(Icons.business_outlined, 'BEDRIJF INFORMATIE'),
             const SizedBox(height: 15),
-            const CustomLabel(text: 'Bedrijf naam'),
-            const CustomTextField(hint: 'Bedrijfsnaam'),
+            _buildLabel('Bedrijfsnaam'),
+            _buildTextField('Voer bedrijfsnaam in'),
             const SizedBox(height: 15),
-            const CustomLabel(text: 'Contact Persoon'),
-            const CustomTextField(hint: 'Volledige naam'),
-
+            _buildLabel('Contactpersoon'),
+            _buildTextField('Naam contactpersoon'),
             const SizedBox(height: 30),
-
-            // --- TICKET DETAILS ---
-            const SectionHeader(
-                icon: Icons.description_outlined, title: 'TICKET DETAILS'),
+            _buildSectionHeader(Icons.description_outlined, 'TICKET DETAILS'),
             const SizedBox(height: 15),
-            const CustomLabel(text: 'Probleem Title'),
-            const CustomTextField(hint: 'Korte samenvatting van het probleem'),
+            _buildLabel('Onderwerp'),
+            _buildTextField('Korte beschrijving'),
             const SizedBox(height: 15),
-            const CustomLabel(text: 'Probleem omschrijving'),
-            const CustomTextField(
-                hint: 'Beschrijf het probleem in detail....', maxLines: 5),
-
+            _buildLabel('Bericht'),
+            _buildTextField('Beschrijf het probleem...', maxLines: 5),
             const SizedBox(height: 20),
-
-            // --- Button voor upload ---
             _buildUploadDocumentsButton(),
-
             const SizedBox(height: 40),
-
-            // --- Submit button ---
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Submit logic
+                },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007AFF),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15)),
+                  backgroundColor: AppColors.primaryBlue,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
                 ),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Submit Ticket ',
-                        style: TextStyle(fontSize: 18, color: Colors.white)),
-                    Icon(Icons.arrow_forward, color: Colors.white),
+                    Text('Submit Ticket ', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                    Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                   ],
                 ),
               ),
@@ -84,24 +70,72 @@ class CreateTicketScreen extends StatelessWidget {
     );
   }
 
-  // "Upload Documents" knop (kan later ook een component worden)
+  Widget _buildSectionHeader(IconData icon, String title) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primaryBlue),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryBlue,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String hint, {int maxLines = 1}) {
+    return TextField(
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey[400]),
+        filled: true,
+        fillColor: AppColors.pureWhite,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.borderGray),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+        ),
+      ),
+    );
+  }
+
   Widget _buildUploadDocumentsButton() {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 15),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey[200]!),
+        color: AppColors.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderGray),
       ),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.file_present_outlined, color: Colors.blueGrey),
+          Icon(Icons.file_present_outlined, color: AppColors.textGray),
           SizedBox(width: 10),
-          Text('Upload Documents',
-              style: TextStyle(
-                  color: Color(0xFF455A64), fontWeight: FontWeight.w500)),
+          Text(
+            'Upload Documents',
+            style: TextStyle(color: AppColors.textGray, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

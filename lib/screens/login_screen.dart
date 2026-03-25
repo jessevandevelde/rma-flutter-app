@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
-import '../components/custom_button.dart';
-import '../components/custom_label.dart';
-import '../components/custom_text_field.dart';
+import '../core/constants/app_colors.dart';
+import '../core/widgets/custom_button.dart';
+import '../core/widgets/custom_label.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -74,9 +74,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.pureWhite,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.pureWhite,
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-            fontSize: 30,
+            fontSize: 24,
           ),
         ),
         centerTitle: true,
@@ -108,14 +108,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 const CustomLabel(text: 'Email'),
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'name@company.com',
-                    hintStyle: TextStyle(color: Colors.grey),
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    prefixIcon: const Icon(Icons.person_outline),
+                    filled: true,
+                    fillColor: AppColors.pureWhite,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.borderGray),
                     ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
@@ -133,8 +140,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintText: '••••••••',
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     prefixIcon: const Icon(Icons.lock_outline),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    filled: true,
+                    fillColor: AppColors.pureWhite,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.borderGray),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     suffixIcon: IconButton(
@@ -156,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 TextButton(
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF1A56DB),
+                    foregroundColor: AppColors.primaryBlue,
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.zero,
                   ),
@@ -166,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
                 CustomButton(
                   text: 'Log In',
                   onPressed: _login,

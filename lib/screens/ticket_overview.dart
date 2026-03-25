@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/support_request.dart';
 import '../components/support_request_card.dart';
 import '../components/custom_search_bar.dart';
+import '../core/constants/app_colors.dart';
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
@@ -24,7 +25,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       ticketId: '#USR-8942',
       status: 'NEED INFO',
       icon: Icons.laptop_chromebook,
-      iconColor: Colors.blue,
+      iconColor: AppColors.primaryBlue,
     ),
     SupportRequest(
       title: 'Password Reset Issue',
@@ -32,7 +33,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       description: 'Cannot login to the portal.',
       date: 'Submitted: Oct 14, 2023',
       ticketId: '#USR-8955',
-      status: 'NEED INFO',
+      status: 'OPEN',
       icon: Icons.vpn_key_outlined,
       iconColor: Colors.orange,
     ),
@@ -79,20 +80,15 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.pureWhite,
         elevation: 0,
         title: const Text(
-          'My Support Requests',
-          style: TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
+          'Mijn Tickets',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.bug_report, color: Colors.red),
-            tooltip: 'Dev: Open Chat',
-            onPressed: () => Navigator.pushNamed(context, '/support-chat', arguments: '#DEV-1234'),
-          ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined, color: Colors.black87),
             onPressed: () {},
@@ -102,14 +98,18 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       body: Column(
         children: [
           CustomSearchBar(
-            hintText: 'Search by title, ID or category',
+            hintText: 'Zoek op titel of ID...',
             onChanged: (value) => setState(() => _searchQuery = value),
           ),
-          TabBar(
-            controller: _tabController,
-            labelColor: Colors.blue[700],
-            indicatorColor: Colors.blue[700],
-            tabs: const [Tab(text: 'Active'), Tab(text: 'Past')],
+          Container(
+            color: AppColors.pureWhite,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primaryBlue,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: AppColors.primaryBlue,
+              tabs: const [Tab(text: 'Actief'), Tab(text: 'Afgerond')],
+            ),
           ),
           const Divider(height: 1),
           Expanded(
@@ -117,7 +117,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
               controller: _tabController,
               children: [
                 _buildRequestList(),
-                const Center(child: Text('Past Requests')),
+                const Center(child: Text('Geen afgeronde tickets')),
               ],
             ),
           ),
@@ -125,10 +125,10 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _scanNewTicket,
-        backgroundColor: const Color(0xFF2962FF),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Request', style: TextStyle(color: Colors.white)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        backgroundColor: AppColors.primaryBlue,
+        icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+        label: const Text('Scan QR Code', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       ),
     );
   }
@@ -142,7 +142,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
           children: [
             Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
-            Text('No requests found', style: TextStyle(color: Colors.grey[600])),
+            Text('Geen tickets gevonden', style: TextStyle(color: Colors.grey[600])),
           ],
         ),
       );
@@ -157,8 +157,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
           onViewDetails: () {
             Navigator.pushNamed(
               context, 
-              '/support-chat', 
-              arguments: filtered[index].ticketId
+              '/create-ticket'
             );
           },
         );
@@ -180,7 +179,11 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Ticket')),
+      appBar: AppBar(
+        title: const Text('Scan Ticket QR'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
       body: MobileScanner(
         onDetect: (capture) {
           if (_isScanCompleted) return;
