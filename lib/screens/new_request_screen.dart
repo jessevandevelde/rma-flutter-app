@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'dart:math';
 import '../models/support_request.dart';
 import '../components/custom_button.dart';
@@ -52,11 +51,16 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
           iconColor = Colors.green;
       }
 
+      // Manual date formatting to avoid 'intl' dependency issues
+      final now = DateTime.now();
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final dateStr = 'Submitted: ${months[now.month - 1]} ${now.day}, ${now.year}';
+
       final newRequest = SupportRequest(
         title: _titleController.text,
         category: _selectedCategory,
         description: _descriptionController.text,
-        date: 'Submitted: ${DateFormat('MMM d, yyyy').format(DateTime.now())}',
+        date: dateStr,
         ticketId: '#USR-${Random().nextInt(9000) + 1000}',
         status: 'OPEN',
         icon: icon,

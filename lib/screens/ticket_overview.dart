@@ -3,24 +3,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/support_request.dart';
 import '../components/support_request_card.dart';
 import '../components/custom_search_bar.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-void main() {
-  runApp(const MaterialApp(
-    home: TicketOverview(),
-  ));
-}
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
-
-  // Functie om de externe link te openen
-  Future<void> _launchUrl(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception('Kon $url niet openen');
-    }
-  }
 
   @override
   State<TicketOverview> createState() => _TicketOverviewState();
@@ -75,45 +60,29 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     }).toList();
   }
 
-  void _scanNewTicket() async {
+  Future<void> _scanNewTicket() async {
     final String? barcodeValue = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (context) => const BarcodeScannerPage(),
       ),
     );
 
-                if (barcodeValue != null && context.mounted) {
-                  Navigator.pushNamed(
-                    context,
-                    '/create-ticket',
-                    arguments: barcodeValue,
-                  );
-                }
-              },
-              label: const Text('Scan QR-Code'),
-            ),
+    if (!mounted) return;
 
-            // Ruimte tussen de twee knoppen
-            const SizedBox(height: 20),
+    if (barcodeValue != null) {
+      Navigator.pushNamed(
+        context,
+        '/create-ticket',
+        arguments: barcodeValue,
+      );
+    }
+  }
 
-            // TWEEDE KNOP
-            ElevatedButton.icon(
-              icon: const Icon(Icons.bug_report),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  '/create-ticket',
-                  arguments: 'https://dmg.support/qr?id=RMM-923478&login_token=gBX1dW1N',
-                );
-              },
-              label: const Text('Test QR Link'),
-            ),
-          ],
-        ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Ticket Overview'),
         actions: [
           IconButton(
             icon: const Icon(Icons.bug_report, color: Colors.red),
@@ -125,6 +94,40 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
             onPressed: () {},
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blueAccent),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code_scanner),
+              title: const Text('Scan QR-Code'),
+              onTap: () {
+                Navigator.pop(context);
+                _scanNewTicket();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bug_report),
+              title: const Text('Test QR Link (Dev)'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(
+                  context,
+                  '/create-ticket',
+                  arguments: 'https://dmg.support/qr?id=RMM-923478&login_token=gBX1dW1N',
+                );
+              },
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -185,7 +188,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
             Navigator.pushNamed(
               context,
               '/support-chat',
-              arguments: filtered[index].ticketId
+              arguments: filtered[index].ticketId,
             );
           },
         );
@@ -216,7 +219,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
             if (barcode.rawValue != null) {
               setState(() => _isScanCompleted = true);
               debugPrint('Barcode gevonden! ${barcode.rawValue}');
-              Navigator.of(context).pop(barcode.rawValue);
+              if (mounted) {
+                Navigator.of(context).pop(barcode.rawValue);
+              }
               break;
             }
           }
