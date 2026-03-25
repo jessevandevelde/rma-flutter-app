@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
+import 'package:dio/dio.dart';
 import '../components/custom_button.dart';
 import '../components/custom_label.dart';
 import '../components/custom_text_field.dart';
@@ -32,37 +33,55 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      final response = await _authService.login(
-        _emailController.text,
-        _passwordController.text,
-      );
+      try {
+        final response = await _authService.login(
+          _emailController.text,
+          _passwordController.text,
+        );
 
-      setState(() {
-        _isLoading = false;
-      });
+        setState(() {
+          _isLoading = false;
+        });
 
-      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login succesvol!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacementNamed(context, '/ticket-overview');
-        }
-      } else {
-        if (mounted) {
-          String errorMsg = "Onbekende fout";
-          if (response?.data != null && response?.data['message'] != null) {
-            errorMsg = response?.data['message'];
-          } else if (response?.statusMessage != null) {
-            errorMsg = response!.statusMessage!;
+        if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Login succesvol!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pushReplacementNamed(context, '/ticket-overview');
           }
+        } else {
+          if (mounted) {
+            String errorMsg = "Login mislukt";
+            if (response?.data != null && response?.data['message'] != null) {
+              errorMsg = response?.data['message'];
+            } else if (response?.statusMessage != null) {
+              errorMsg = response!.statusMessage!;
+            }
 
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMsg),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (mounted) {
+          String message = "Er is een fout opgetreden";
+          if (e is DioException) {
+            message = "Netwerkfout: ${e.message}";
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Login mislukt: $errorMsg'),
+              content: Text(message),
               backgroundColor: Colors.red,
             ),
           );
