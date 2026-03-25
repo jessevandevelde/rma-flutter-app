@@ -21,7 +21,7 @@ class Authenticatie {
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 5), // Iets ruimer gezet voor stabiliteit
+      connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
@@ -44,6 +44,24 @@ class Authenticatie {
       return response;
     } on DioException catch (e) {
       debugPrint('Login fout: ${e.message}');
+      return e.response;
+    }
+  }
+
+  /// Stuurt een wachtwoord reset link naar de opgegeven email
+  Future<Response?> forgotPassword(String email) async {
+    try {
+      // We gebruiken '/forgot-password' omdat dit de route is die je server bereikte.
+      // Zorg ervoor dat er geen spaties in de string staan.
+      final response = await _dio.post(
+        '/forgot-password',
+        data: {
+          'email': email,
+        },
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Forgot password fout: ${e.message}');
       return e.response;
     }
   }
