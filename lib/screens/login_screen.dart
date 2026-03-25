@@ -125,17 +125,9 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 20),
                 const CustomLabel(text: 'Email'),
-                TextFormField(
+                CustomTextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    hintText: 'name@company.com',
-                    hintStyle: TextStyle(color: Colors.grey),
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
+                  hint: 'name@company.com',
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Voer aub een email in';
@@ -145,27 +137,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
                 const CustomLabel(text: 'Wachtwoord'),
-                TextFormField(
+                CustomTextField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    hintText: '••••••••',
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                  hint: '••••••••',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Voer aub een wachtwoord in';
@@ -179,7 +163,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.zero,
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    // Navigeer naar forgot password screen
+                    Navigator.pushNamed(context, '/forgot-password');
+                  },
                   child: const Text(
                     'Wachtwoord vergeten?',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
