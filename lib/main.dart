@@ -24,9 +24,8 @@ class MyApp extends StatelessWidget {
           primary: AppColors.primaryBlue,
         ),
         useMaterial3: true,
-        fontFamily: 'Inter', // Zorg dat dit in pubspec.yaml staat als je het gebruikt
       ),
-      // Start op de login pagina
+      // We starten nu op het inlogscherm
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
