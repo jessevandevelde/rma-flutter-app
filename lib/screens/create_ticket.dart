@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/ticket_service.dart';
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
@@ -9,10 +10,75 @@ class CreateTicketScreen extends StatefulWidget {
 
 class _CreateTicketScreenState extends State<CreateTicketScreen> {
   bool _isChecked = false;
+  bool _isLoading = false;
+  final TicketService _ticketService = TicketService();
+
+  // Controllers voor alle velden
+  final TextEditingController _introController = TextEditingController();
+  final TextEditingController _repairProcessController = TextEditingController();
+  final TextEditingController _modelController = TextEditingController();
+  final TextEditingController _serialController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _frequencyController = TextEditingController();
+  final TextEditingController _causeController = TextEditingController();
+  final TextEditingController _symptomsController = TextEditingController();
+  final TextEditingController _personalDataController = TextEditingController();
+  final TextEditingController _companyController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _pickupDateController = TextEditingController();
+
+  @override
+  void dispose() {
+    _introController.dispose();
+    _repairProcessController.dispose();
+    _modelController.dispose();
+    _serialController.dispose();
+    _descriptionController.dispose();
+    _frequencyController.dispose();
+    _causeController.dispose();
+    _symptomsController.dispose();
+    _personalDataController.dispose();
+    _companyController.dispose();
+    _phoneController.dispose();
+    _pickupDateController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleFormSubmit(String? scannedCode) async {
+    setState(() => _isLoading = true);
+
+    final Map<String, dynamic> ticketData = {
+      'scannedCode': scannedCode,
+      'intro': _introController.text,
+      'repair_process': _repairProcessController.text,
+      'model': _modelController.text,
+      'serial': _serialController.text,
+      'description': _descriptionController.text,
+      'frequency': _frequencyController.text,
+      'cause': _causeController.text,
+      'symptoms': _symptomsController.text,
+      'personal_data': _personalDataController.text,
+      'company': _companyController.text,
+      'phone': _phoneController.text,
+      'pickup_date': _pickupDateController.text,
+    };
+
+    final bool success = await _ticketService.createTicket(ticketData);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        _showSuccessDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Er is iets fout gegaan bij het aanmaken van het ticket.')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Get the scanned code from the arguments
     final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
 
     return Scaffold(
@@ -56,49 +122,46 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               const SizedBox(height: 20),
             ],
 
-            // --- COMPANY INFORMATION ---
             _buildSectionHeader(Icons.business_outlined, 'Informatie'),
             const SizedBox(height: 15),
             _buildLabel('Intro Text'),
-            _buildTextField(''),
+            _buildTextField('', _introController),
             const SizedBox(height: 15),
             _buildLabel('Bekijk het reparatieproces'),
-            _buildTextField(''),
+            _buildTextField('', _repairProcessController),
             const SizedBox(height: 15),
             _buildLabel('Model / Type'),
-            _buildTextField('For example: CF-XXXXXX or FZ-XXXXXX'),
+            _buildTextField('For example: CF-XXXXXX or FZ-XXXXXX', _modelController),
             const SizedBox(height: 15),
             _buildLabel('Serienummer'),
-            _buildTextField('Please enter a serial number'),
+            _buildTextField('Please enter a serial number', _serialController),
             const SizedBox(height: 15),
             _buildLabel('Beschrijving van het probleem'),
-            _buildTextField('Beschrijf het probleem zo gedetailleerd mogelijk.',
-                maxLines: 3),
+            _buildTextField('Beschrijf het probleem zo gedetailleerd mogelijk.', _descriptionController, maxLines: 3),
             const SizedBox(height: 15),
             _buildLabel('Probleemfrequentie'),
-            _buildTextField(''),
+            _buildTextField('', _frequencyController),
             const SizedBox(height: 15),
             _buildLabel('Vermoedelijke oorzaak'),
-            _buildTextField(''),
+            _buildTextField('', _causeController),
             const SizedBox(height: 15),
             _buildLabel('Symptonen'),
-            _buildTextField(''),
+            _buildTextField('', _symptomsController),
             const SizedBox(height: 15),
             _buildLabel('Persoonlijke gegevens'),
-            _buildTextField(''),
+            _buildTextField('', _personalDataController),
             const SizedBox(height: 15),
             _buildLabel('Uw bedrijfsnaam'),
-            _buildTextField('Voer een bedrijfsnaam in'),
+            _buildTextField('Voer een bedrijfsnaam in', _companyController),
             const SizedBox(height: 15),
             _buildLabel('Jouw telefoonnummer'),
-            _buildTextField('Voer een telefoonnummer in'),
+            _buildTextField('Voer een telefoonnummer in', _phoneController),
             const SizedBox(height: 15),
             _buildLabel('Ophaaldatum'),
-            _buildTextField(''),
+            _buildTextField('', _pickupDateController),
 
             const SizedBox(height: 10),
 
-            // De Checkbox direct in de lijst
             CheckboxListTile(
               title: const Text(
                 'Ik erken en ga ermee akkoord dat mijn apparaat tijdens het reparatieproces mogelijk wordt gewist of dat de gegevens ervan worden verwijderd. Ik begrijp dat deze maatregel noodzakelijk is om een effectieve reparatie te garanderen en mijn privacy en veiligheid te beschermen.\n\n'
@@ -120,22 +183,22 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: _isChecked ? () {
-                  _showSuccessDialog();
-                } : null,
+                onPressed: (_isChecked && !_isLoading) ? () => _handleFormSubmit(scannedCode) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isChecked ? const Color(0xFF007AFF) : Colors.grey,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15)),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Submit Ticket ',
-                        style: TextStyle(fontSize: 18, color: Colors.white)),
-                    Icon(Icons.arrow_forward, color: Colors.white),
-                  ],
-                ),
+                child: _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Submit Ticket ',
+                            style: TextStyle(fontSize: 18, color: Colors.white)),
+                        Icon(Icons.arrow_forward, color: Colors.white),
+                      ],
+                    ),
               ),
             ),
           ],
@@ -163,8 +226,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                Navigator.of(context).pop(); // Sluit de dialoog
-                Navigator.of(context).pop(); // Ga terug naar het vorige scherm
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -196,8 +259,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     );
   }
 
-  Widget _buildTextField(String hint, {int maxLines = 1}) {
+  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1}) {
     return TextField(
+      controller: controller,
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
