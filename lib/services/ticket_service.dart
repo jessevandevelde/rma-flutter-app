@@ -9,7 +9,7 @@ class TicketService {
   TicketService() {
     // Dynamische baseUrl op basis van platform
     String baseUrl = 'http://localhost:8000';
-    
+
     if (!kIsWeb) {
       if (Platform.isAndroid) {
         // 10.0.2.2 is voor Android Emulators om de host machine te bereiken
@@ -55,7 +55,7 @@ class TicketService {
     } on DioException catch (e) {
       debugPrint('Fout bij aanmaken ticket: ${e.message}');
       if (e.type == DioExceptionType.connectionTimeout) {
-        debugPrint('Timeout: Is de server op de juiste URL wel bereikbaar?');
+        debugPrint('Timeout: Is de server op wel bereikbaar?');
       }
       return false;
     }

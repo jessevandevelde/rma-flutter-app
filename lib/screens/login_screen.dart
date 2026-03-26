@@ -52,7 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
 
-            // Helper functie om recursief naar de sleutel te zoeken
             dynamic findValue(dynamic data, String key) {
               if (data is Map) {
                 if (data.containsKey(key)) return data[key];
@@ -83,32 +82,17 @@ class _LoginScreenState extends State<LoginScreen> {
             String errorMsg = "Login mislukt";
             if (response?.data != null && response?.data['message'] != null) {
               errorMsg = response?.data['message'];
-            } else if (response?.statusMessage != null) {
-              errorMsg = response!.statusMessage!;
             }
-
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(errorMsg),
-                backgroundColor: Colors.red,
-              ),
+              SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
             );
           }
         }
       } catch (e) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
         if (mounted) {
-          String message = "Er is een fout opgetreden";
-          if (e is DioException) {
-            message = "Netwerkfout: ${e.message}";
-          }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.red,
-            ),
+            const SnackBar(content: Text('Er is een fout opgetreden'), backgroundColor: Colors.red),
           );
         }
       }

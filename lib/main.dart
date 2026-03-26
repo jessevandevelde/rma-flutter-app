@@ -7,6 +7,7 @@ import 'package:rma_app/screens/login_screen.dart';
 import 'package:rma_app/screens/create_ticket.dart';
 import 'package:rma_app/screens/ticket_overview.dart';
 import 'package:rma_app/screens/forgot_password_screen.dart';
+import 'package:rma_app/screens/admin_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
         '/create-ticket': (context) => const CreateTicketScreen(),
         '/ticket-overview': (context) => const TicketOverview(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/admin': (context) => const AdminScreen(),
       },
     );
   }

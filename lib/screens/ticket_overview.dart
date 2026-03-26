@@ -113,9 +113,20 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blueAccent),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, color: Colors.blueAccent),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'User Menu',
+                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  ),
+                ],
               ),
             ),
             ListTile(
@@ -126,6 +137,15 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
                 _scanNewTicket();
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Logout', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _logout();
+              },
+            ),
+            const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text('Logout', style: TextStyle(color: Colors.red)),
