@@ -1,11 +1,21 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 
 class Authenticatie {
   late final Dio _dio;
 
   Authenticatie() {
-    const String baseUrl = 'http://127.0.0.1:8000';
+    // Dynamische baseUrl op basis van platform
+    String baseUrl = 'http://127.0.0.1:8000';
+
+    if (!kIsWeb) {
+      if (Platform.isAndroid) {
+        // 10.0.2.2 is voor Android Emulators om de host machine te bereiken
+        baseUrl = 'http://10.0.2.2:8000';
+      }
+    }
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
@@ -42,7 +52,7 @@ class Authenticatie {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         final token = data['access_token'] ?? data['token'];
-        
+
         dynamic userTypeId;
         if (data['user'] != null) {
           userTypeId = data['user']['user_type_id'];

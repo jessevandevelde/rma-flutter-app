@@ -9,7 +9,7 @@ class TicketService {
   TicketService() {
     // Dynamische baseUrl op basis van platform
     String baseUrl = 'http://localhost:8000';
-    
+
     if (!kIsWeb) {
       if (Platform.isAndroid) {
         // 10.0.2.2 is voor Android Emulators om de host machine te bereiken
