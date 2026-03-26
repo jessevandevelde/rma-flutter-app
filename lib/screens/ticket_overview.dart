@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:rma_app/classes/authenticatie.dart';
 import '../models/support_request.dart';
 import '../components/support_request_card.dart';
 import '../components/custom_search_bar.dart';
@@ -13,6 +14,7 @@ class TicketOverview extends StatefulWidget {
 
 class _TicketOverviewState extends State<TicketOverview> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final Authenticatie _authService = Authenticatie();
   String _searchQuery = '';
 
   final List<SupportRequest> _requests = [
@@ -78,6 +80,13 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     }
   }
 
+  Future<void> _logout() async {
+    await _authService.logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,8 +99,9 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
             onPressed: () => Navigator.pushNamed(context, '/support-chat', arguments: '#DEV-1234'),
           ),
           IconButton(
-            icon: const Icon(Icons.account_circle_outlined, color: Colors.black87),
-            onPressed: () {},
+            icon: const Icon(Icons.logout, color: Colors.black87),
+            tooltip: 'Logout',
+            onPressed: _logout,
           ),
         ],
       ),
@@ -101,9 +111,20 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blueAccent),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, color: Colors.blueAccent),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'User Menu',
+                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  ),
+                ],
               ),
             ),
             ListTile(
@@ -124,6 +145,15 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
                   '/create-ticket',
                   arguments: 'https://dmg.support/qr?id=RMM-923478&login_token=gBX1dW1N',
                 );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Logout', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _logout();
               },
             ),
           ],
