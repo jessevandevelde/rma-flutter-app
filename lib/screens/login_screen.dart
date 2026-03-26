@@ -102,71 +102,119 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.asset(
-            'pictures/dmglogo.png',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Colors.black),
-          ),
-        ),
-        title: const Text(
-          'Login',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 30),
-        ),
-        centerTitle: true,
-      ),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 20),
-                const CustomLabel(text: 'Email'),
-                CustomTextField(
-                  controller: _emailController,
-                  hint: 'name@company.com',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Voer aub een email in';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                const CustomLabel(text: 'Wachtwoord'),
-                CustomTextField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  hint: '••••••••',
-                  suffixIcon: IconButton(
-                    icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Image.asset(
+                        'pictures/dmglogo.png',
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, size: 40),
+                      ),
+                    ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Voer aub een wachtwoord in';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF1A56DB),
+                  const SizedBox(height: 30),
+
+                  const Text(
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Welcome back to your Digital Concierge',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Email Input
+                  const Align(
                     alignment: Alignment.centerLeft,
-                    padding: EdgeInsets.zero,
+                    child: CustomLabel(text: 'Email'),
                   ),
-                  onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
-                  child: const Text('Wachtwoord vergeten?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(height: 20),
-                CustomButton(text: 'Log In', onPressed: _login, isLoading: _isLoading),
-              ],
+                  CustomTextField(
+                    controller: _emailController,
+                    hint: 'name@company.com',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) => (value == null || value.isEmpty) ? 'Enter email' : null,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Wachtwoord Input
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: CustomLabel(text: 'Password'),
+                  ),
+                  CustomTextField(
+                    controller: _passwordController,
+                    obscureText: !_isPasswordVisible,
+                    hint: '••••••••',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: const Color(0xFF64748B),
+                      ),
+                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                    ),
+                    validator: (value) => (value == null || value.isEmpty) ? 'Enter password' : null,
+                  ),
+
+                  // Forgot Password
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF1A56DB),
+                        padding: EdgeInsets.zero,
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/forgot-password');
+                      },
+                      child: const Text(
+                        'Wachtwoord vergeten?',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  CustomButton(
+                    text: 'Log In',
+                    onPressed: _login,
+                    isLoading: _isLoading,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
