@@ -51,39 +51,48 @@ class _LoginScreenState extends State<LoginScreen> {
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pushReplacementNamed(context, '/ticket-overview');
+
+            dynamic findValue(dynamic data, String key) {
+              if (data is Map) {
+                if (data.containsKey(key)) return data[key];
+                for (var value in data.values) {
+                  final found = findValue(value, key);
+                  if (found != null) return found;
+                }
+              } else if (data is List) {
+                for (var item in data) {
+                  final found = findValue(item, key);
+                  if (found != null) return found;
+                }
+              }
+              return null;
+            }
+
+            final rawUserTypeId = findValue(response.data, 'user_type_id');
+            final int? userType = int.tryParse(rawUserTypeId?.toString() ?? '');
+
+            if (userType == 2) {
+              Navigator.pushReplacementNamed(context, '/admin');
+            } else {
+              Navigator.pushReplacementNamed(context, '/ticket-overview');
+            }
           }
         } else {
           if (mounted) {
             String errorMsg = "Login mislukt";
             if (response?.data != null && response?.data['message'] != null) {
               errorMsg = response?.data['message'];
-            } else if (response?.statusMessage != null) {
-              errorMsg = response!.statusMessage!;
             }
-
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(errorMsg),
-                backgroundColor: Colors.red,
-              ),
+              SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
             );
           }
         }
       } catch (e) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
         if (mounted) {
-          String message = "Er is een fout opgetreden";
-          if (e is DioException) {
-            message = "Netwerkfout: ${e.message}";
-          }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.red,
-            ),
+            const SnackBar(content: Text('Er is een fout opgetreden'), backgroundColor: Colors.red),
           );
         }
       }
@@ -107,11 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         title: const Text(
           'Login',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 30,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 30),
         ),
         centerTitle: true,
       ),
@@ -131,7 +136,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Voer aub een email in';
-                    if (!value.contains('@')) return 'Voer een geldig emailadres in';
                     return null;
                   },
                 ),
@@ -142,14 +146,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: !_isPasswordVisible,
                   hint: '••••••••',
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      });
-                    },
+                    icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Voer aub een wachtwoord in';
@@ -163,21 +161,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.zero,
                   ),
-                  onPressed: () {
-                    // Navigeer naar forgot password screen
-                    Navigator.pushNamed(context, '/forgot-password');
-                  },
-                  child: const Text(
-                    'Wachtwoord vergeten?',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
+                  onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                  child: const Text('Wachtwoord vergeten?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 20),
-                CustomButton(
-                  text: 'Log In',
-                  onPressed: _login,
-                  isLoading: _isLoading,
-                ),
+                CustomButton(text: 'Log In', onPressed: _login, isLoading: _isLoading),
               ],
             ),
           ),
