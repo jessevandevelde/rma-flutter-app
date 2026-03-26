@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:rma_app/classes/authenticatie.dart';
 import '../models/support_request.dart';
 import '../components/support_request_card.dart';
 import '../components/custom_search_bar.dart';
@@ -14,6 +15,7 @@ class TicketOverview extends StatefulWidget {
 
 class _TicketOverviewState extends State<TicketOverview> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final Authenticatie _authService = Authenticatie();
   String _searchQuery = '';
 
   final List<SupportRequest> _requests = [
@@ -61,19 +63,28 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     }).toList();
   }
 
-  void _scanNewTicket() async {
+  Future<void> _scanNewTicket() async {
     final String? barcodeValue = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (context) => const BarcodeScannerPage(),
       ),
     );
 
-    if (barcodeValue != null && mounted) {
+    if (!mounted) return;
+
+    if (barcodeValue != null) {
       Navigator.pushNamed(
         context,
         '/create-ticket',
         arguments: barcodeValue,
       );
+    }
+  }
+
+  Future<void> _logout() async {
+    await _authService.logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/');
     }
   }
 
@@ -91,9 +102,40 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
         actions: [
           IconButton(
             icon: const Icon(Icons.account_circle_outlined, color: Colors.black87),
-            onPressed: () {},
+            tooltip: 'Logout',
+            onPressed: _logout,
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blueAccent),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code_scanner),
+              title: const Text('Scan QR-Code'),
+              onTap: () {
+                Navigator.pop(context);
+                _scanNewTicket();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Logout', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _logout();
+              },
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -156,8 +198,9 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
           request: filtered[index],
           onViewDetails: () {
             Navigator.pushNamed(
-              context, 
-              '/create-ticket'
+              context,
+              '/support-chat',
+              arguments: filtered[index].ticketId,
             );
           },
         );
@@ -191,7 +234,10 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           for (final barcode in barcodes) {
             if (barcode.rawValue != null) {
               setState(() => _isScanCompleted = true);
-              Navigator.of(context).pop(barcode.rawValue);
+              debugPrint('Barcode gevonden! ${barcode.rawValue}');
+              if (mounted) {
+                Navigator.of(context).pop(barcode.rawValue);
+              }
               break;
             }
           }

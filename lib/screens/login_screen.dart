@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
-import '../core/constants/app_colors.dart';
-import '../core/widgets/custom_button.dart';
+import 'package:dio/dio.dart';
+import '../components/custom_button.dart';
+import '../components/custom_label.dart';
+import '../components/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,27 +33,82 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      final response = await _authService.login(
-        _emailController.text,
-        _passwordController.text,
-      );
+      try {
+        final response = await _authService.login(
+          _emailController.text,
+          _passwordController.text,
+        );
 
-      setState(() {
-        _isLoading = false;
-      });
+        setState(() {
+          _isLoading = false;
+        });
 
-      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/ticket-overview');
+        if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Login succesvol!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Helper functie om recursief naar de sleutel te zoeken
+            dynamic findValue(dynamic data, String key) {
+              if (data is Map) {
+                if (data.containsKey(key)) return data[key];
+                for (var value in data.values) {
+                  final found = findValue(value, key);
+                  if (found != null) return found;
+                }
+              } else if (data is List) {
+                for (var item in data) {
+                  final found = findValue(item, key);
+                  if (found != null) return found;
+                }
+              }
+              return null;
+            }
+
+            final rawUserTypeId = findValue(response.data, 'user_type_id');
+            final int? userType = int.tryParse(rawUserTypeId?.toString() ?? '');
+
+            if (userType == 2) {
+              Navigator.pushReplacementNamed(context, '/admin');
+            } else {
+              Navigator.pushReplacementNamed(context, '/ticket-overview');
+            }
+          }
+        } else {
+          if (mounted) {
+            String errorMsg = "Login mislukt";
+            if (response?.data != null && response?.data['message'] != null) {
+              errorMsg = response?.data['message'];
+            } else if (response?.statusMessage != null) {
+              errorMsg = response!.statusMessage!;
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMsg),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
-      } else {
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
         if (mounted) {
-          String errorMsg = "Onbekende fout";
-          if (response?.data != null && response?.data['message'] != null) {
-            errorMsg = response?.data['message'];
+          String message = "Er is een fout opgetreden";
+          if (e is DioException) {
+            message = "Netwerkfout: ${e.message}";
           }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Login mislukt: $errorMsg'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -61,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Lichte achtergrond zoals op foto
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -95,14 +152,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  
-                  // Login Tekst
+
                   const Text(
                     'Login',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B), // Donkerblauw/Zwart
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -111,137 +167,73 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFF64748B), // Grijsachtig blauw
+                      color: Color(0xFF64748B),
                     ),
                   ),
                   const SizedBox(height: 40),
 
                   // Email Input
-                  _buildInputLabel('Email'),
-                  TextFormField(
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: CustomLabel(text: 'Email'),
+                  ),
+                  CustomTextField(
                     controller: _emailController,
-                    decoration: _buildInputDecoration(
-                      hint: 'name@company.com',
-                      icon: Icons.person_outline,
-                    ),
+                    hint: 'name@company.com',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    keyboardType: TextInputType.emailAddress,
                     validator: (value) => (value == null || value.isEmpty) ? 'Enter email' : null,
                   ),
                   const SizedBox(height: 20),
 
                   // Wachtwoord Input
-                  _buildInputLabel('Password'),
-                  TextFormField(
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: CustomLabel(text: 'Password'),
+                  ),
+                  CustomTextField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
-                    decoration: _buildInputDecoration(
-                      hint: '••••••••',
-                      icon: Icons.lock_outline,
-                    ).copyWith(
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                          color: const Color(0xFF64748B),
-                        ),
-                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                    hint: '••••••••',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: const Color(0xFF64748B),
                       ),
+                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
                     validator: (value) => (value == null || value.isEmpty) ? 'Enter password' : null,
                   ),
-                  
+
                   // Forgot Password
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton(
-                      onPressed: () {},
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF1A56DB),
+                        padding: EdgeInsets.zero,
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/forgot-password');
+                      },
                       child: const Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          color: AppColors.primaryBlue,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        'Wachtwoord vergeten?',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Login Button
                   CustomButton(
                     text: 'Log In',
                     onPressed: _login,
                     isLoading: _isLoading,
-                  ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Footer
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "Don't have an account? ",
-                        style: TextStyle(color: Color(0xFF64748B)),
-                      ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Text(
-                          "Contact Support",
-                          style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInputLabel(String label) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: Color(0xFF475569),
-          ),
-        ),
-      ),
-    );
-  }
-
-  InputDecoration _buildInputDecoration({required String hint, required IconData icon}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-      prefixIcon: Icon(icon, color: const Color(0xFF64748B)),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.redAccent),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
       ),
     );
   }
