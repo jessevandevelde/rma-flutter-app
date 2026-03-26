@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/support_request.dart';
 import '../components/support_request_card.dart';
 import '../components/custom_search_bar.dart';
+import '../services/api_service.dart';
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
@@ -13,35 +14,49 @@ class TicketOverview extends StatefulWidget {
 
 class _TicketOverviewState extends State<TicketOverview> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ApiService _apiService = ApiService();
+  
+  List<SupportRequest> _activeRequests = [];
+  List<SupportRequest> _pastRequests = [];
+  bool _isLoading = true;
   String _searchQuery = '';
-
-  final List<SupportRequest> _requests = [
-    SupportRequest(
-      title: 'Broken Laptop Screen',
-      category: 'Laptop',
-      description: 'Screen is cracked after a fall.',
-      date: 'Submitted: Oct 12, 2023',
-      ticketId: '#USR-8942',
-      status: 'NEED INFO',
-      icon: Icons.laptop_chromebook,
-      iconColor: Colors.blue,
-    ),
-    SupportRequest(
-      title: 'Password Reset Issue',
-      category: 'Password/Access',
-      description: 'Cannot login to the portal.',
-      date: 'Submitted: Oct 14, 2023',
-      ticketId: '#USR-8955',
-      status: 'NEED INFO',
-      icon: Icons.vpn_key_outlined,
-      iconColor: Colors.orange,
-    ),
-  ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        _loadTickets();
+      }
+    });
+
+    _loadTickets();
+  }
+
+  Future<void> _loadTickets() async {
+    setState(() => _isLoading = true);
+    try {
+      final String status = _tabController.index == 0 ? 'OPEN' : 'CLOSED';
+      final tickets = await _apiService.fetchRequests(status: status);
+      
+      setState(() {
+        if (_tabController.index == 0) {
+          _activeRequests = tickets;
+        } else {
+          _pastRequests = tickets;
+        }
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fout bij het laden van tickets')),
+        );
+      }
+    }
   }
 
   @override
@@ -50,29 +65,23 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     super.dispose();
   }
 
-  List<SupportRequest> get _filteredRequests {
-    if (_searchQuery.isEmpty) return _requests;
-    return _requests.where((request) {
+  List<SupportRequest> _getFilteredList(List<SupportRequest> list) {
+    if (_searchQuery.isEmpty) return list;
+    return list.where((request) {
       final searchLower = _searchQuery.toLowerCase();
       return request.title.toLowerCase().contains(searchLower) ||
-          request.ticketId.toLowerCase().contains(searchLower) ||
-          request.category.toLowerCase().contains(searchLower);
+          request.ticketId.toLowerCase().contains(searchLower);
     }).toList();
   }
 
-  void _scanNewTicket() async {
-    final String? barcodeValue = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (context) => const BarcodeScannerPage(),
-      ),
-    );
-
-    if (barcodeValue != null && mounted) {
-      Navigator.pushNamed(
-        context,
-        '/create-ticket',
-        arguments: barcodeValue,
-      );
+  // UITLEG: Ik heb deze functie aangepast zodat hij direct naar het formulier gaat
+  // in plaats van eerst de camera te openen voor een scan.
+  void _createNewRequest() async {
+    final result = await Navigator.pushNamed(context, '/create-ticket');
+    
+    // Als er een nieuw ticket is aangemaakt, verversen we de lijst
+    if (result == true) {
+      _loadTickets();
     }
   }
 
@@ -89,9 +98,8 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bug_report, color: Colors.red),
-            tooltip: 'Dev: Open Chat',
-            onPressed: () => Navigator.pushNamed(context, '/support-chat', arguments: '#DEV-1234'),
+            icon: const Icon(Icons.refresh, color: Colors.black87),
+            onPressed: _loadTickets,
           ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined, color: Colors.black87),
@@ -102,29 +110,34 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       body: Column(
         children: [
           CustomSearchBar(
-            hintText: 'Search by title, ID or category',
+            hintText: 'Search by title or ID',
             onChanged: (value) => setState(() => _searchQuery = value),
           ),
           TabBar(
             controller: _tabController,
-            labelColor: Colors.blue[700],
-            indicatorColor: Colors.blue[700],
-            tabs: const [Tab(text: 'Active'), Tab(text: 'Past')],
+            labelColor: const Color(0xFF1976D2),
+            indicatorColor: const Color(0xFF1976D2),
+            tabs: const [
+              Tab(text: 'Active'),
+              Tab(text: 'Past'),
+            ],
           ),
           const Divider(height: 1),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRequestList(),
-                const Center(child: Text('Past Requests')),
-              ],
-            ),
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildRequestList(_getFilteredList(_activeRequests)),
+                    _buildRequestList(_getFilteredList(_pastRequests)),
+                  ],
+                ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _scanNewTicket,
+        onPressed: _createNewRequest, // Nu direct naar het formulier
         backgroundColor: const Color(0xFF2962FF),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('New Request', style: TextStyle(color: Colors.white)),
@@ -133,40 +146,43 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     );
   }
 
-  Widget _buildRequestList() {
-    final filtered = _filteredRequests;
-    if (filtered.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text('No requests found', style: TextStyle(color: Colors.grey[600])),
-          ],
-        ),
+  Widget _buildRequestList(List<SupportRequest> list) {
+    if (list.isEmpty) {
+      return ListView(
+        children: [
+          const SizedBox(height: 100),
+          Center(
+            child: Column(
+              children: [
+                const Icon(Icons.search_off, size: 64, color: Color(0xFFE0E0E0)),
+                const SizedBox(height: 16),
+                const Text('No requests found', style: TextStyle(color: Color(0xFF757575))),
+              ],
+            ),
+          ),
+        ],
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) {
-        return SupportRequestCard(
-          request: filtered[index],
-          onViewDetails: () {
-            Navigator.pushNamed(
-              context, 
-              '/support-chat', 
-              arguments: filtered[index].ticketId
-            );
-          },
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: _loadTickets,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: list.length,
+        itemBuilder: (context, index) {
+          return SupportRequestCard(
+            request: list[index],
+            onViewDetails: () {
+              Navigator.pushNamed(context, '/support-chat', arguments: list[index].ticketId);
+            },
+          );
+        },
+      ),
     );
   }
 }
 
+// Barcode scanner pagina blijft bestaan voor als je hem later nodig hebt via een andere knop
 class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
 

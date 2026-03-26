@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
 import '../components/custom_button.dart';
 import '../components/custom_label.dart';
-import '../components/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,45 +25,47 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // UITLEG: De 'bypass' is nu verwijderd. 
+  // De app probeert nu ECHT verbinding te maken met je API.
+  // Als de server niet aanstaat, krijg je nu een foutmelding te zien.
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      final response = await _authService.login(
-        _emailController.text,
-        _passwordController.text,
-      );
+      try {
+        final response = await _authService.login(
+          _emailController.text,
+          _passwordController.text,
+        );
 
-      setState(() {
-        _isLoading = false;
-      });
+        setState(() {
+          _isLoading = false;
+        });
 
-      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login succesvol!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacementNamed(context, '/ticket-overview');
-        }
-      } else {
-        if (mounted) {
-          String errorMsg = "Onbekende fout";
-          if (response?.data != null && response?.data['message'] != null) {
-            errorMsg = response?.data['message'];
-          } else if (response?.statusMessage != null) {
-            errorMsg = response!.statusMessage!;
+        if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+          // Succes: Ga naar het dashboard
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/ticket-overview');
           }
-
+        } else {
+          // Fout: Toon de melding van de server of een algemene fout
+          if (mounted) {
+            String errorMsg = "Server onbereikbaar of ongeldige gegevens";
+            if (response?.data != null && response?.data['message'] != null) {
+              errorMsg = response?.data['message'];
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Login mislukt: $errorMsg'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Login mislukt: $errorMsg'),
-              backgroundColor: Colors.red,
-            ),
+            const SnackBar(content: Text('Netwerkfout: Controleer of je server aanstaat'), backgroundColor: Colors.red),
           );
         }
       }
@@ -78,102 +79,37 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.asset(
-            'pictures/dmglogo.png',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Colors.black),
-          ),
-        ),
-        title: const Text(
-          'Login',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 30,
-          ),
-        ),
+        title: const Text('RMA Login', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 20),
-                const CustomLabel(text: 'Email'),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    hintText: 'name@company.com',
-                    hintStyle: TextStyle(color: Colors.grey),
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Voer aub een email in';
-                    if (!value.contains('@')) return 'Voer een geldig emailadres in';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                const CustomLabel(text: 'Wachtwoord'),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    hintText: '••••••••',
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Voer aub een wachtwoord in';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF1A56DB),
-                    alignment: Alignment.centerLeft,
-                    padding: EdgeInsets.zero,
-                  ),
-                  onPressed: () {},
-                  child: const Text(
-                    'Wachtwoord vergeten?',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                CustomButton(
-                  text: 'Log In',
-                  onPressed: _login,
-                  isLoading: _isLoading,
-                ),
-              ],
-            ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const CustomLabel(text: 'Email'),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'jouw@email.nl'),
+                validator: (value) => (value == null || value.isEmpty) ? 'Voer email in' : null,
+              ),
+              const SizedBox(height: 20),
+              const CustomLabel(text: 'Wachtwoord'),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible,
+                decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '••••••••'),
+                validator: (value) => (value == null || value.isEmpty) ? 'Voer wachtwoord in' : null,
+              ),
+              const SizedBox(height: 30),
+              CustomButton(
+                text: 'Log In',
+                onPressed: _login,
+                isLoading: _isLoading,
+              ),
+            ],
           ),
         ),
       ),

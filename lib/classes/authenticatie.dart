@@ -1,27 +1,28 @@
+import 'dart:io'; // Nodig om te checken of we op Android zitten
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart'; // Voor kIsWeb
 
 class Authenticatie {
   late final Dio _dio;
 
   Authenticatie() {
-    // Haal de APP_MODE op (bijv. via --dart-define=APP_MODE=prod)
     const String mode = String.fromEnvironment('APP_MODE', defaultValue: 'dev');
-
-    // Bepaal de baseUrl op basis van de modus
     String baseUrl;
+
     if (mode == 'prod') {
       baseUrl = 'https://api.jouwproductieurl.com';
-    } else if (mode == 'staging') {
-      baseUrl = 'https://api.staging.com';
     } else {
-      // Gebruik 10.0.2.2 voor Android emulators of 127.0.0.1 voor iOS/Web
-      baseUrl = 'http://127.0.0.1:8000';
+      // UITLEG: Voor Android emulators moet je 10.0.2.2 gebruiken in plaats van localhost (127.0.0.1)
+      if (!kIsWeb && Platform.isAndroid) {
+        baseUrl = 'http://10.0.2.2:8000';
+      } else {
+        baseUrl = 'http://127.0.0.1:8000';
+      }
     }
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 5), // Iets ruimer gezet voor stabiliteit
+      connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
@@ -41,9 +42,11 @@ class Authenticatie {
           'password': password,
         },
       );
+      debugPrint('Backend verbonden! Status: ${response.statusCode}');
       return response;
     } on DioException catch (e) {
-      debugPrint('Login fout: ${e.message}');
+      debugPrint('GEEN verbinding met backend op ${_dio.options.baseUrl}');
+      debugPrint('Foutmelding: ${e.message}');
       return e.response;
     }
   }
