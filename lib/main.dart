@@ -1,12 +1,9 @@
-  import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:rma_app/screens/login_screen.dart';
 import 'package:rma_app/screens/create_ticket.dart';
 import 'package:rma_app/screens/ticket_overview.dart';
 import 'package:rma_app/screens/forgot_password_screen.dart';
-import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
-import 'screens/create_ticket.dart';
-import 'screens/ticket_overview.dart';
+import 'package:rma_app/screens/admin_dashboard.dart';
 import 'core/constants/app_colors.dart';
 
 void main() {
@@ -30,13 +27,13 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      // We starten nu op het inlogscherm
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
         '/create-ticket': (context) => const CreateTicketScreen(),
         '/ticket-overview': (context) => const TicketOverview(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/admin-dashboard': (context) => const AdminDashboard(),
       },
     );
   }

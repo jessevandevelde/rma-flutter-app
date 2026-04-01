@@ -10,7 +10,6 @@ class CreateTicketScreen extends StatefulWidget {
 }
 
 class _CreateTicketScreenState extends State<CreateTicketScreen> {
-  bool _isChecked = false;
   bool _isLoading = false;
   final TicketService _ticketService = TicketService();
 
@@ -45,11 +44,31 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     super.dispose();
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Succes'),
+        content: const Text('Uw ticket is succesvol aangemaakt.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Sluit dialoog
+              Navigator.pop(context); // Terug naar overzicht
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handleFormSubmit(String? scannedCode) async {
     setState(() => _isLoading = true);
 
     final Map<String, dynamic> ticketData = {
-      'ticket_type_id': 1, // Added mandatory field. Adjust this ID based on your backend.
+      'ticket_type_id': 1,
       'scannedCode': scannedCode,
       'intro': _introController.text,
       'repair_process': _repairProcessController.text,
@@ -105,18 +124,18 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             _buildSectionHeader(Icons.business_outlined, 'BEDRIJF INFORMATIE'),
             const SizedBox(height: 15),
             _buildLabel('Bedrijfsnaam'),
-            _buildTextField('Voer bedrijfsnaam in'),
+            _buildTextField('Voer bedrijfsnaam in', controller: _companyController),
             const SizedBox(height: 15),
-            _buildLabel('Contactpersoon'),
-            _buildTextField('Naam contactpersoon'),
+            _buildLabel('Telefoonnummer'),
+            _buildTextField('Voer telefoonnummer in', controller: _phoneController),
             const SizedBox(height: 30),
             _buildSectionHeader(Icons.description_outlined, 'TICKET DETAILS'),
             const SizedBox(height: 15),
-            _buildLabel('Onderwerp'),
-            _buildTextField('Korte beschrijving'),
+            _buildLabel('Model'),
+            _buildTextField('Model van het apparaat', controller: _modelController),
             const SizedBox(height: 15),
             _buildLabel('Bericht'),
-            _buildTextField('Beschrijf het probleem...', maxLines: 5),
+            _buildTextField('Beschrijf het probleem...', maxLines: 5, controller: _descriptionController),
             const SizedBox(height: 20),
             _buildUploadDocumentsButton(),
             const SizedBox(height: 40),
@@ -124,21 +143,21 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: () {
-                  // Submit logic
-                },
+                onPressed: _isLoading ? null : () => _handleFormSubmit(scannedCode),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Submit Ticket ', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
-                    Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                  ],
-                ),
+                child: _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Submit Ticket ', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                        Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                      ],
+                    ),
               ),
             ),
           ],
@@ -175,8 +194,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     );
   }
 
-  Widget _buildTextField(String hint, {int maxLines = 1}) {
+  Widget _buildTextField(String hint, {int maxLines = 1, TextEditingController? controller}) {
     return TextField(
+      controller: controller,
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,

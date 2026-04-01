@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
-import 'package:dio/dio.dart';
-import '../components/custom_button.dart';
-import '../components/custom_label.dart';
-import '../components/custom_text_field.dart';
 import '../core/constants/app_colors.dart';
 import '../core/widgets/custom_button.dart';
 
@@ -45,18 +41,29 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
 
-      if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/ticket-overview');
-        }
-      } else {
-        if (mounted) {
-          String errorMsg = "Onbekende fout";
-          if (response?.data != null && response?.data['message'] != null) {
-            errorMsg = response?.data['message'];
+        if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
+          if (mounted) {
+            // HIER AANGEPAST: We gaan nu naar het admin dashboard
+            Navigator.pushReplacementNamed(context, '/admin-dashboard');
           }
+        } else {
+          if (mounted) {
+            String errorMsg = "Onbekende fout";
+            if (response?.data != null && response?.data['message'] != null) {
+              errorMsg = response?.data['message'];
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Login mislukt: $errorMsg'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Login mislukt: $errorMsg'), backgroundColor: Colors.red),
+            SnackBar(content: Text('Er is een fout opgetreden: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -66,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Lichte achtergrond zoals op foto
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -101,13 +108,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Login Tekst
                   const Text(
                     'Login',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B), // Donkerblauw/Zwart
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -116,12 +122,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFF64748B), // Grijsachtig blauw
+                      color: Color(0xFF64748B),
                     ),
                   ),
                   const SizedBox(height: 40),
 
-                  // Email Input
                   _buildInputLabel('Email'),
                   TextFormField(
                     controller: _emailController,
@@ -133,7 +138,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Wachtwoord Input
                   _buildInputLabel('Password'),
                   TextFormField(
                     controller: _passwordController,
@@ -153,7 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     validator: (value) => (value == null || value.isEmpty) ? 'Enter password' : null,
                   ),
 
-                  // Forgot Password
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton(
@@ -169,7 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Login Button
                   CustomButton(
                     text: 'Log In',
                     onPressed: _login,
@@ -178,7 +180,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 40),
 
-                  // Footer
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

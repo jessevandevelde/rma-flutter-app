@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,8 +8,11 @@ class TicketService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   TicketService() {
-    // 10.0.2.2 is the address to access localhost from the Android Emulator
-    const String baseUrl = 'http://10.0.2.2:8000';
+    // Gebruik 10.0.2.2 voor Android Emulator, localhost voor Windows/Web
+    String baseUrl = 'http://localhost:8000';
+    if (!kIsWeb && Platform.isAndroid) {
+      baseUrl = 'http://10.0.2.2:8000';
+    }
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
