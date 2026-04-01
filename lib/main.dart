@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
-import 'screens/create_ticket.dart';
-import 'screens/ticket_overview.dart';
-import 'core/constants/app_colors.dart';
 import 'package:rma_app/screens/login_screen.dart';
 import 'package:rma_app/screens/create_ticket.dart';
 import 'package:rma_app/screens/ticket_overview.dart';
@@ -22,15 +18,9 @@ class MyApp extends StatelessWidget {
       title: 'RMA App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: AppColors.primaryBlue,
-        scaffoldBackgroundColor: AppColors.backgroundGray,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryBlue,
-          primary: AppColors.primaryBlue,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      // We starten nu op het inlogscherm
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
