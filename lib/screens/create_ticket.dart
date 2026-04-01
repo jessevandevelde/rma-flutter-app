@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import '../services/ticket_service.dart';
+import '../components/section_header.dart';
+import '../components/custom_label.dart';
+import '../services/api_service.dart';
+import '../models/support_request.dart';
+import 'dart:math';
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
@@ -190,7 +195,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15)),
                 ),
-                child: _isLoading 
+                child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,

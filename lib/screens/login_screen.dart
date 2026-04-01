@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
-import 'package:dio/dio.dart';
 import '../components/custom_button.dart';
 import '../components/custom_label.dart';
 import '../components/custom_text_field.dart';
@@ -27,6 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // UITLEG: De 'bypass' is nu verwijderd.
+  // De app probeert nu ECHT verbinding te maken met je API.
+  // Als de server niet aanstaat, krijg je nu een foutmelding te zien.
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
