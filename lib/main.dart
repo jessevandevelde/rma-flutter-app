@@ -16,12 +16,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'RMA App',
-      debugShowCheckedModeBanner: false, // Haalt het rode 'debug' label weg
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      // UITLEG: initialRoute '/' zorgt ervoor dat de app ALTIJD op het LoginScreen begint.
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),

@@ -5,6 +5,7 @@ import '../models/support_request.dart';
 import '../components/support_request_card.dart';
 import '../components/custom_search_bar.dart';
 import '../services/api_service.dart';
+import '../core/constants/app_colors.dart';
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
@@ -17,7 +18,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
   late TabController _tabController;
   final Authenticatie _authService = Authenticatie();
   final ApiService _apiService = ApiService();
-  
+
   List<SupportRequest> _activeRequests = [];
   List<SupportRequest> _pastRequests = [];
   bool _isLoading = true;
@@ -45,7 +46,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     try {
       final int? userId = await _authService.getUserId();
       final String status = _tabController.index == 0 ? 'OPEN' : 'CLOSED';
-      
+
       // We geven het userId mee aan de API call
       final tickets = await _apiService.fetchRequests(status: status, userId: userId);
 
@@ -118,6 +119,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundGray,
       appBar: AppBar(
         title: const Text('My Tickets'),
         actions: [
@@ -170,7 +172,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
           ),
           const Divider(height: 1),
           Expanded(
-            child: _isLoading 
+            child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : TabBarView(
                   controller: _tabController,
@@ -242,7 +244,11 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Ticket')),
+      appBar: AppBar(
+        title: const Text('Scan Ticket QR'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
       body: MobileScanner(
         onDetect: (capture) {
           if (_isScanCompleted) return;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/ticket_service.dart';
 import '../components/section_header.dart';
 import '../components/custom_label.dart';
+import '../components/custom_text_field.dart';
 import '../services/api_service.dart';
 import '../models/support_request.dart';
 import 'dart:math';
@@ -53,7 +54,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     setState(() => _isLoading = true);
 
     final Map<String, dynamic> ticketData = {
-      'ticket_type_id': 1, // Added mandatory field. Adjust this ID based on your backend.
+      'ticket_type_id': 1,
       'scannedCode': scannedCode,
       'intro': _introController.text,
       'repair_process': _repairProcessController.text,
@@ -83,6 +84,35 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     }
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 10),
+              Text('Succes'),
+            ],
+          ),
+          content: const Text('Uw ticket is succesvol aangemaakt!'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Go back to overview
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
@@ -90,6 +120,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
@@ -97,8 +129,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         title: const Text('Ticket aanmaken',
             style: TextStyle(
                 color: Colors.black87, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -110,7 +140,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
+                  color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -128,43 +158,43 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               const SizedBox(height: 20),
             ],
 
-            _buildSectionHeader(Icons.business_outlined, 'Informatie'),
+            const SectionHeader(icon: Icons.business_outlined, title: 'Informatie'),
             const SizedBox(height: 15),
-            _buildLabel('Intro Text'),
-            _buildTextField('', _introController),
+            const CustomLabel(text: 'Intro Text'),
+            CustomTextField(hint: 'Introductie', controller: _introController),
             const SizedBox(height: 15),
-            _buildLabel('Bekijk het reparatieproces'),
-            _buildTextField('', _repairProcessController),
+            const CustomLabel(text: 'Bekijk het reparatieproces'),
+            CustomTextField(hint: 'Reparatieproces', controller: _repairProcessController),
             const SizedBox(height: 15),
-            _buildLabel('Model / Type'),
-            _buildTextField('For example: CF-XXXXXX or FZ-XXXXXX', _modelController),
+            const CustomLabel(text: 'Model / Type'),
+            CustomTextField(hint: 'Bijv: CF-XXXXXX of FZ-XXXXXX', controller: _modelController),
             const SizedBox(height: 15),
-            _buildLabel('Serienummer'),
-            _buildTextField('Please enter a serial number', _serialController),
+            const CustomLabel(text: 'Serienummer'),
+            CustomTextField(hint: 'Voer serienummer in', controller: _serialController),
             const SizedBox(height: 15),
-            _buildLabel('Beschrijving van het probleem'),
-            _buildTextField('Beschrijf het probleem zo gedetailleerd mogelijk.', _descriptionController, maxLines: 3),
+            const CustomLabel(text: 'Beschrijving van het probleem'),
+            CustomTextField(hint: 'Beschrijf het probleem in detail...', controller: _descriptionController, maxLines: 3),
             const SizedBox(height: 15),
-            _buildLabel('Probleemfrequentie'),
-            _buildTextField('', _frequencyController),
+            const CustomLabel(text: 'Probleemfrequentie'),
+            CustomTextField(hint: 'Hoe vaak komt het voor?', controller: _frequencyController),
             const SizedBox(height: 15),
-            _buildLabel('Vermoedelijke oorzaak'),
-            _buildTextField('', _causeController),
+            const CustomLabel(text: 'Vermoedelijke oorzaak'),
+            CustomTextField(hint: 'Wat denkt u dat de oorzaak is?', controller: _causeController),
             const SizedBox(height: 15),
-            _buildLabel('Symptonen'),
-            _buildTextField('', _symptomsController),
+            const CustomLabel(text: 'Symptomen'),
+            CustomTextField(hint: 'Wat merkt u aan het apparaat?', controller: _symptomsController),
             const SizedBox(height: 15),
-            _buildLabel('Persoonlijke gegevens'),
-            _buildTextField('', _personalDataController),
+            const CustomLabel(text: 'Persoonlijke gegevens'),
+            CustomTextField(hint: 'Naam / Afdeling', controller: _personalDataController),
             const SizedBox(height: 15),
-            _buildLabel('Uw bedrijfsnaam'),
-            _buildTextField('Voer een bedrijfsnaam in', _companyController),
+            const CustomLabel(text: 'Uw bedrijfsnaam'),
+            CustomTextField(hint: 'Bedrijfsnaam', controller: _companyController),
             const SizedBox(height: 15),
-            _buildLabel('Jouw telefoonnummer'),
-            _buildTextField('Voer een telefoonnummer in', _phoneController),
+            const CustomLabel(text: 'Jouw telefoonnummer'),
+            CustomTextField(hint: 'Telefoonnummer', controller: _phoneController, keyboardType: TextInputType.phone),
             const SizedBox(height: 15),
-            _buildLabel('Ophaaldatum'),
-            _buildTextField('', _pickupDateController),
+            const CustomLabel(text: 'Ophaaldatum'),
+            CustomTextField(hint: 'Gewenste ophaaldatum', controller: _pickupDateController),
 
             const SizedBox(height: 10),
 
@@ -208,80 +238,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green),
-              SizedBox(width: 10),
-              Text('Succes'),
-            ],
-          ),
-          content: const Text('Uw ticket is succesvol aangemaakt!'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSectionHeader(IconData icon, String title) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.blueGrey),
-        const SizedBox(width: 8),
-        Text(title,
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey)),
-      ],
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text,
-          style: TextStyle(
-              fontWeight: FontWeight.w600, color: Colors.blueGrey[800])),
-    );
-  }
-
-  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1}) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.grey[200]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.blue[200]!),
         ),
       ),
     );
