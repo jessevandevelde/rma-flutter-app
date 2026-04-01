@@ -1,18 +1,25 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 
 class Authenticatie {
   late final Dio _dio;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Authenticatie() {
-    // We gaan terug naar de basisinstelling die voorheen werkte.
-    const String baseUrl = 'http://10.0.2.2:8000';
+    // Dynamische baseUrl op basis van platform
+    String baseUrl = 'http://127.0.0.1:8000';
+
+    if (!kIsWeb) {
+      if (Platform.isAndroid) {
+        // 10.0.2.2 is voor Android Emulators om de host machine te bereiken
+        baseUrl = 'http://10.0.2.2:8000';
+      }
+    }
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 5),
+      connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
@@ -20,18 +27,16 @@ class Authenticatie {
       },
     ));
 
-    // Voeg een interceptor toe om de token automatisch aan elke request toe te voegen
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'auth_token');
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         return handler.next(options);
       },
     ));
-
-    debugPrint('Authenticatie geinitialiseerd op: $baseUrl');
   }
 
   Future<Response?> login(String email, String password) async {
@@ -44,35 +49,49 @@ class Authenticatie {
         },
       );
 
-      // Sla de token op als de login succesvol is
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final token = response.data['access_token'] ?? response.data['token'];
+        final data = response.data;
+        final token = data['access_token'] ?? data['token'];
+
+        dynamic userTypeId;
+        if (data['user'] != null) {
+          userTypeId = data['user']['user_type_id'];
+        } else if (data['user_type_id'] != null) {
+          userTypeId = data['user_type_id'];
+        }
+
         if (token != null) {
-          await _storage.write(key: 'auth_token', value: token);
-          debugPrint('Token succesvol opgeslagen');
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', token);
+          if (userTypeId != null) {
+            await prefs.setInt('user_type_id', int.parse(userTypeId.toString()));
+          }
         }
       }
 
       return response;
     } on DioException catch (e) {
-      debugPrint('Login fout: ${e.message}');
-      // We geven de response terug als die er is, anders gooien we de error door
       if (e.response != null) return e.response;
       rethrow;
     }
   }
 
-  /// Haal de opgeslagen token op
   Future<String?> getToken() async {
-    return await _storage.read(key: 'auth_token');
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
   }
 
-  /// Log de gebruiker uit en verwijder de token
+  Future<int?> getUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_type_id');
+  }
+
   Future<void> logout() async {
-    await _storage.delete(key: 'auth_token');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('user_type_id');
   }
 
-  /// Stuurt een wachtwoord reset link naar de opgegeven email
   Future<Response?> forgotPassword(String email) async {
     try {
       final response = await _dio.post(
@@ -83,7 +102,6 @@ class Authenticatie {
       );
       return response;
     } on DioException catch (e) {
-      debugPrint('Forgot password fout: ${e.message}');
       return e.response;
     }
   }
