@@ -33,13 +33,20 @@ class Authenticatie {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        final userId = data['user']?['id'];
+        final prefs = await SharedPreferences.getInstance();
         
+        // Save User ID
+        final userId = data['user']?['id'];
         if (userId != null) {
-          final prefs = await SharedPreferences.getInstance();
           await prefs.setInt('user_id', userId);
+        }
+
+        // Save Auth Token (supporting various common keys like 'token' or 'access_token')
+        final token = data['access_token'] ?? data['token'];
+        if (token != null) {
+          await prefs.setString('auth_token', token.toString());
         }
       }
       return response;
@@ -48,8 +55,6 @@ class Authenticatie {
     }
   }
 
-  // UITLEG: Deze methode ontbrak en veroorzaakte de build error.
-  // Het verstuurt een verzoek naar de backend om een reset-link te genereren.
   Future<Response?> forgotPassword(String email) async {
     try {
       final response = await _dio.post(
@@ -69,8 +74,14 @@ class Authenticatie {
     return prefs.getInt('user_id');
   }
 
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_id');
+    await prefs.remove('auth_token');
   }
 }

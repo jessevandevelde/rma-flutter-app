@@ -24,13 +24,15 @@ class ApiService {
       },
     ));
 
-    // UITLEG: Deze interceptor zorgt ervoor dat bij elk verzoek automatisch 
-    // de 'auth_token' uit de SharedPreferences wordt gehaald en in de headers wordt gezet.
+    // Interceptor om de 'auth_token' uit de SharedPreferences te halen en als 'user-token' te sturen.
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('auth_token');
         if (token != null) {
+          options.headers['user-token'] = token;
+          // We behouden Authorization Bearer ook voor de zekerheid, 
+          // tenzij je wilt dat deze strikt weg moet.
           options.headers['Authorization'] = 'Bearer $token';
         }
         return handler.next(options);
@@ -48,11 +50,9 @@ class ApiService {
         queryParameters['user_id'] = userId.toString();
       }
       
-      // Het eindpunt is nu /api/ticket zoals gevraagd
       final response = await _dio.get('/api/ticket', queryParameters: queryParameters);
       
       if (response.statusCode == 200) {
-        // De API geeft nu een object terug met een 'tickets' key
         final List<dynamic> data = response.data['tickets'] ?? [];
         return data.map((json) => _mapJsonToRequest(json)).toList();
       }
@@ -95,7 +95,6 @@ class ApiService {
   }
 
   SupportRequest _mapJsonToRequest(Map<String, dynamic> json) {
-    // We mappen de JSON van de backend naar ons SupportRequest model
     final asset = json['asset'];
     final ticketType = json['ticket_type'];
     final statusObj = json['status']?['status'];
