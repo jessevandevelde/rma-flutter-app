@@ -1,11 +1,88 @@
 import 'package:flutter/material.dart';
+import '../services/ticket_service.dart';
 import '../core/constants/app_colors.dart';
 
-class CreateTicketScreen extends StatelessWidget {
+class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
 
   @override
+  State<CreateTicketScreen> createState() => _CreateTicketScreenState();
+}
+
+class _CreateTicketScreenState extends State<CreateTicketScreen> {
+  bool _isChecked = false;
+  bool _isLoading = false;
+  final TicketService _ticketService = TicketService();
+
+  // Controllers voor alle velden
+  final TextEditingController _introController = TextEditingController();
+  final TextEditingController _repairProcessController = TextEditingController();
+  final TextEditingController _modelController = TextEditingController();
+  final TextEditingController _serialController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _frequencyController = TextEditingController();
+  final TextEditingController _causeController = TextEditingController();
+  final TextEditingController _symptomsController = TextEditingController();
+  final TextEditingController _personalDataController = TextEditingController();
+  final TextEditingController _companyController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _pickupDateController = TextEditingController();
+
+  @override
+  void dispose() {
+    _introController.dispose();
+    _repairProcessController.dispose();
+    _modelController.dispose();
+    _serialController.dispose();
+    _descriptionController.dispose();
+    _frequencyController.dispose();
+    _causeController.dispose();
+    _symptomsController.dispose();
+    _personalDataController.dispose();
+    _companyController.dispose();
+    _phoneController.dispose();
+    _pickupDateController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleFormSubmit(String? scannedCode) async {
+    setState(() => _isLoading = true);
+
+    final Map<String, dynamic> ticketData = {
+      'ticket_type_id': 1, // Added mandatory field. Adjust this ID based on your backend.
+      'scannedCode': scannedCode,
+      'intro': _introController.text,
+      'repair_process': _repairProcessController.text,
+      'model': _modelController.text,
+      'serial': _serialController.text,
+      'description': _descriptionController.text,
+      'frequency': _frequencyController.text,
+      'cause': _causeController.text,
+      'symptoms': _symptomsController.text,
+      'personal_data': _personalDataController.text,
+      'company': _companyController.text,
+      'phone': _phoneController.text,
+      'pickup_date': _pickupDateController.text,
+    };
+
+    final bool success = await _ticketService.createTicket(ticketData);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        _showSuccessDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Er is iets fout gegaan bij het aanmaken van het ticket.')),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundGray,
       appBar: AppBar(

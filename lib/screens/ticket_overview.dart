@@ -61,14 +61,16 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     }).toList();
   }
 
-  void _scanNewTicket() async {
+  Future<void> _scanNewTicket() async {
     final String? barcodeValue = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (context) => const BarcodeScannerPage(),
       ),
     );
 
-    if (barcodeValue != null && mounted) {
+    if (!mounted) return;
+
+    if (barcodeValue != null) {
       Navigator.pushNamed(
         context,
         '/create-ticket',
@@ -94,6 +96,40 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
             onPressed: () {},
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blueAccent),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code_scanner),
+              title: const Text('Scan QR-Code'),
+              onTap: () {
+                Navigator.pop(context);
+                _scanNewTicket();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bug_report),
+              title: const Text('Test QR Link (Dev)'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(
+                  context,
+                  '/create-ticket',
+                  arguments: 'https://dmg.support/qr?id=RMM-923478&login_token=gBX1dW1N',
+                );
+              },
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -191,7 +227,10 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           for (final barcode in barcodes) {
             if (barcode.rawValue != null) {
               setState(() => _isScanCompleted = true);
-              Navigator.of(context).pop(barcode.rawValue);
+              debugPrint('Barcode gevonden! ${barcode.rawValue}');
+              if (mounted) {
+                Navigator.of(context).pop(barcode.rawValue);
+              }
               break;
             }
           }

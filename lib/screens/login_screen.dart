@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
+import 'package:dio/dio.dart';
+import '../components/custom_button.dart';
+import '../components/custom_label.dart';
+import '../components/custom_text_field.dart';
 import '../core/constants/app_colors.dart';
 import '../core/widgets/custom_button.dart';
 
@@ -31,14 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      final response = await _authService.login(
-        _emailController.text,
-        _passwordController.text,
-      );
+      try {
+        final response = await _authService.login(
+          _emailController.text,
+          _passwordController.text,
+        );
 
-      setState(() {
-        _isLoading = false;
-      });
+        setState(() {
+          _isLoading = false;
+        });
 
       if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
         if (mounted) {
@@ -95,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  
+
                   // Login Tekst
                   const Text(
                     'Login',
@@ -147,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     validator: (value) => (value == null || value.isEmpty) ? 'Enter password' : null,
                   ),
-                  
+
                   // Forgot Password
                   Align(
                     alignment: Alignment.centerLeft,
@@ -170,9 +175,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _login,
                     isLoading: _isLoading,
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Footer
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,

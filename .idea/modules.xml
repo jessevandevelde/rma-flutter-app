@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/rma_app.iml" filepath="$PROJECT_DIR$/.idea/rma_app.iml" />
       <module fileurl="file://$PROJECT_DIR$/android/rma_app_android.iml" filepath="$PROJECT_DIR$/android/rma_app_android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/rma-flutter-app.iml" filepath="$PROJECT_DIR$/.idea/rma-flutter-app.iml" />
     </modules>
   </component>
 </project>
