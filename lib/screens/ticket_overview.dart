@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:rma_app/classes/authenticatie.dart';
 import '../models/support_request.dart';
 import '../components/support_request_card.dart';
 import '../components/custom_search_bar.dart';
@@ -14,18 +15,20 @@ class TicketOverview extends StatefulWidget {
 
 class _TicketOverviewState extends State<TicketOverview> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final Authenticatie _authService = Authenticatie();
   final ApiService _apiService = ApiService();
   
   List<SupportRequest> _activeRequests = [];
   List<SupportRequest> _pastRequests = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  SupportRequest? _searchedTicketById;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
+
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         _loadTickets();
@@ -35,27 +38,51 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     _loadTickets();
   }
 
+  // UITLEG: We halen nu de tickets op van de ingelogde gebruiker
   Future<void> _loadTickets() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
+      final int? userId = await _authService.getUserId();
       final String status = _tabController.index == 0 ? 'OPEN' : 'CLOSED';
-      final tickets = await _apiService.fetchRequests(status: status);
       
-      setState(() {
-        if (_tabController.index == 0) {
-          _activeRequests = tickets;
-        } else {
-          _pastRequests = tickets;
-        }
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
+      // We geven het userId mee aan de API call
+      final tickets = await _apiService.fetchRequests(status: status, userId: userId);
+
       if (mounted) {
+        setState(() {
+          if (_tabController.index == 0) {
+            _activeRequests = tickets;
+          } else {
+            _pastRequests = tickets;
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Fout bij het laden van tickets')),
         );
       }
+    }
+  }
+
+  Future<void> _searchTicketById(String value) async {
+    if (value.isEmpty) {
+      setState(() => _searchedTicketById = null);
+      return;
+    }
+
+    final int? id = int.tryParse(value);
+    if (id != null) {
+      final ticket = await _apiService.fetchTicketById(id);
+      setState(() {
+        _searchedTicketById = ticket;
+      });
+    } else {
+      setState(() => _searchedTicketById = null);
     }
   }
 
@@ -74,45 +101,64 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     }).toList();
   }
 
-  // UITLEG: Ik heb deze functie aangepast zodat hij direct naar het formulier gaat
-  // in plaats van eerst de camera te openen voor een scan.
   void _createNewRequest() async {
     final result = await Navigator.pushNamed(context, '/create-ticket');
-    
-    // Als er een nieuw ticket is aangemaakt, verversen we de lijst
     if (result == true) {
       _loadTickets();
+    }
+  }
+
+  Future<void> _logout() async {
+    await _authService.logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'My Support Requests',
-          style: TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
-        ),
+        title: const Text('My Tickets'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black87),
             onPressed: _loadTickets,
           ),
           IconButton(
-            icon: const Icon(Icons.account_circle_outlined, color: Colors.black87),
-            onPressed: () {},
+            icon: const Icon(Icons.logout, color: Colors.black87),
+            tooltip: 'Logout',
+            onPressed: _logout,
           ),
         ],
       ),
       body: Column(
         children: [
           CustomSearchBar(
-            hintText: 'Search by title or ID',
-            onChanged: (value) => setState(() => _searchQuery = value),
+            hintText: 'Search tickets...',
+            onChanged: (value) {
+              setState(() => _searchQuery = value);
+              _searchTicketById(value);
+            },
           ),
+          if (_searchedTicketById != null)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Resultaat op ID:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  SupportRequestCard(
+                    request: _searchedTicketById!,
+                    onViewDetails: () {
+                      Navigator.pushNamed(context, '/support-chat', arguments: _searchedTicketById!.ticketId);
+                    },
+                  ),
+                  const Divider(thickness: 2),
+                ],
+              ),
+            ),
           TabBar(
             controller: _tabController,
             labelColor: const Color(0xFF1976D2),
@@ -137,7 +183,7 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createNewRequest, // Nu direct naar het formulier
+        onPressed: _createNewRequest,
         backgroundColor: const Color(0xFF2962FF),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('New Request', style: TextStyle(color: Colors.white)),
@@ -151,12 +197,12 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       return ListView(
         children: [
           const SizedBox(height: 100),
-          Center(
+          const Center(
             child: Column(
               children: [
-                const Icon(Icons.search_off, size: 64, color: Color(0xFFE0E0E0)),
-                const SizedBox(height: 16),
-                const Text('No requests found', style: TextStyle(color: Color(0xFF757575))),
+                Icon(Icons.search_off, size: 64, color: Color(0xFFE0E0E0)),
+                SizedBox(height: 16),
+                Text('No tickets found for you', style: TextStyle(color: Color(0xFF757575))),
               ],
             ),
           ),
@@ -164,25 +210,25 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadTickets,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: list.length,
-        itemBuilder: (context, index) {
-          return SupportRequestCard(
-            request: list[index],
-            onViewDetails: () {
-              Navigator.pushNamed(context, '/support-chat', arguments: list[index].ticketId);
-            },
-          );
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        return SupportRequestCard(
+          request: list[index],
+          onViewDetails: () {
+            Navigator.pushNamed(
+              context,
+              '/support-chat',
+              arguments: list[index].ticketId,
+            );
+          },
+        );
+      },
     );
   }
 }
 
-// Barcode scanner pagina blijft bestaan voor als je hem later nodig hebt via een andere knop
 class BarcodeScannerPage extends StatefulWidget {
   const BarcodeScannerPage({super.key});
 
@@ -204,7 +250,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           for (final barcode in barcodes) {
             if (barcode.rawValue != null) {
               setState(() => _isScanCompleted = true);
-              Navigator.of(context).pop(barcode.rawValue);
+              if (mounted) {
+                Navigator.of(context).pop(barcode.rawValue);
+              }
               break;
             }
           }

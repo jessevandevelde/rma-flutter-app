@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/support_request.dart';
 import 'package:flutter/material.dart';
 
@@ -8,22 +9,14 @@ class ApiService {
   late final Dio _dio;
 
   ApiService() {
-    const String mode = String.fromEnvironment('APP_MODE', defaultValue: 'dev');
-    String baseUrl;
-    
-    if (mode == 'prod') {
-      baseUrl = 'https://api.jouwproductieurl.com';
-    } else {
-      if (!kIsWeb && Platform.isAndroid) {
-        baseUrl = 'http://10.0.2.2:8000';
-      } else {
-        baseUrl = 'http://127.0.0.1:8000';
-      }
+    String baseUrl = 'http://127.0.0.1:8000';
+    if (!kIsWeb && Platform.isAndroid) {
+      baseUrl = 'http://10.0.2.2:8000';
     }
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
@@ -31,28 +24,61 @@ class ApiService {
       },
     ));
 
+    // UITLEG: Deze interceptor zorgt ervoor dat bij elk verzoek automatisch 
+    // de 'auth_token' uit de SharedPreferences wordt gehaald en in de headers wordt gezet.
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+    ));
+
     _dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
   }
 
-  Future<List<SupportRequest>> fetchRequests({String status = 'OPEN'}) async {
+  // Ophalen van tickets van de ingelogde gebruiker
+  Future<List<SupportRequest>> fetchRequests({String status = 'OPEN', int? userId}) async {
     try {
-      final response = await _dio.get('/api/tickets', queryParameters: {'status': status});
+      final queryParameters = {'status': status};
+      if (userId != null) {
+        queryParameters['user_id'] = userId.toString();
+      }
+      
+      // Het eindpunt is nu /api/ticket zoals gevraagd
+      final response = await _dio.get('/api/ticket', queryParameters: queryParameters);
       
       if (response.statusCode == 200) {
-        List<dynamic> data = response.data;
+        // De API geeft nu een object terug met een 'tickets' key
+        final List<dynamic> data = response.data['tickets'] ?? [];
         return data.map((json) => _mapJsonToRequest(json)).toList();
       }
       return [];
     } on DioException catch (e) {
-      debugPrint('VERBINDINGSFOUT: ${e.message}');
+      debugPrint('API Error: ${e.message}');
       rethrow;
+    }
+  }
+
+  Future<SupportRequest?> fetchTicketById(int id) async {
+    try {
+      final response = await _dio.get('/api/ticket/$id');
+      if (response.statusCode == 200) {
+        return _mapJsonToRequest(response.data);
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
   Future<bool> createRequest(SupportRequest request) async {
     try {
       final response = await _dio.post(
-        '/api/tickets',
+        '/api/ticket',
         data: {
           'title': request.title,
           'category': request.category,
@@ -64,30 +90,34 @@ class ApiService {
       );
       return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
-      debugPrint('OPSLAAN MISLUKT: $e');
       return false;
     }
   }
 
   SupportRequest _mapJsonToRequest(Map<String, dynamic> json) {
+    // We mappen de JSON van de backend naar ons SupportRequest model
+    final asset = json['asset'];
+    final ticketType = json['ticket_type'];
+    final statusObj = json['status']?['status'];
+
     return SupportRequest(
-      title: json['title'] ?? 'Geen titel',
-      category: json['category'] ?? 'Algemeen',
-      description: json['description'] ?? '',
-      date: json['created_at'] ?? 'Vandaag',
-      ticketId: json['ticketId'] ?? '#0000',
-      status: json['status'] ?? 'OPEN',
-      // UITLEG: Deze velden komen nu mee uit de 'ticket_data' tabel via de JOIN op de server
-      productName: json['product_name'] ?? '',
-      serialNumber: json['serial_number'] ?? '',
-      icon: _getIcon(json['category']),
+      title: asset?['description'] ?? 'Ticket #${json['id']}',
+      category: ticketType?['friendly_name'] ?? 'Algemeen',
+      description: asset?['description'] ?? '',
+      date: json['created_at'] ?? 'Onbekend',
+      ticketId: json['id']?.toString() ?? '#0000',
+      status: statusObj?['name']?.toString().toUpperCase() ?? 'OPEN',
+      productName: asset?['asset_type']?['name'] ?? '',
+      serialNumber: asset?['serial_number'] ?? '',
+      icon: _getIcon(ticketType?['name']),
       iconColor: Colors.blue,
     );
   }
 
   IconData _getIcon(String? category) {
+    if (category == 'repair') return Icons.build;
+    if (category == 'question') return Icons.help_outline;
     if (category == 'Laptop') return Icons.laptop;
-    if (category == 'Password/Access') return Icons.lock;
     return Icons.assignment;
   }
 }

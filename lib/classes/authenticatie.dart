@@ -1,36 +1,26 @@
-import 'dart:io'; // Nodig om te checken of we op Android zitten
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart'; // Voor kIsWeb
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 
 class Authenticatie {
   late final Dio _dio;
 
   Authenticatie() {
-    const String mode = String.fromEnvironment('APP_MODE', defaultValue: 'dev');
-    String baseUrl;
-
-    if (mode == 'prod') {
-      baseUrl = 'https://api.jouwproductieurl.com';
-    } else {
-      // UITLEG: Voor Android emulators moet je 10.0.2.2 gebruiken in plaats van localhost (127.0.0.1)
-      if (!kIsWeb && Platform.isAndroid) {
-        baseUrl = 'http://10.0.2.2:8000';
-      } else {
-        baseUrl = 'http://127.0.0.1:8000';
-      }
+    String baseUrl = 'http://127.0.0.1:8000';
+    if (!kIsWeb && Platform.isAndroid) {
+      baseUrl = 'http://10.0.2.2:8000';
     }
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 5),
+      connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
     ));
-
-    debugPrint('Authenticatie geinitialiseerd op: $baseUrl');
   }
 
   Future<Response?> login(String email, String password) async {
@@ -42,12 +32,45 @@ class Authenticatie {
           'password': password,
         },
       );
-      debugPrint('Backend verbonden! Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final userId = data['user']?['id'];
+        
+        if (userId != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('user_id', userId);
+        }
+      }
       return response;
     } on DioException catch (e) {
-      debugPrint('GEEN verbinding met backend op ${_dio.options.baseUrl}');
-      debugPrint('Foutmelding: ${e.message}');
       return e.response;
     }
+  }
+
+  // UITLEG: Deze methode ontbrak en veroorzaakte de build error.
+  // Het verstuurt een verzoek naar de backend om een reset-link te genereren.
+  Future<Response?> forgotPassword(String email) async {
+    try {
+      final response = await _dio.post(
+        '/api/auth/forgot-password',
+        data: {
+          'email': email,
+        },
+      );
+      return response;
+    } on DioException catch (e) {
+      return e.response;
+    }
+  }
+
+  Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_id');
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_id');
   }
 }
