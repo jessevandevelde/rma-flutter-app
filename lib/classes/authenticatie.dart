@@ -36,7 +36,7 @@ class Authenticatie {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         final prefs = await SharedPreferences.getInstance();
-        
+
         // Save User ID
         final userId = data['user']?['id'];
         if (userId != null) {
