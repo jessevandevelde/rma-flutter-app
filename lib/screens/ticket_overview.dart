@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:rma_app/classes/authenticatie.dart';
 import '../models/support_request.dart';
+import '../components/support_request_card.dart';
+import '../components/custom_search_bar.dart';
+import '../services/api_service.dart';
+import '../core/constants/app_colors.dart';
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
@@ -11,35 +16,75 @@ class TicketOverview extends StatefulWidget {
 
 class _TicketOverviewState extends State<TicketOverview> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _searchQuery = '';
+  final Authenticatie _authService = Authenticatie();
+  final ApiService _apiService = ApiService();
 
-  final List<SupportRequest> _requests = [
-    SupportRequest(
-      title: 'Broken Laptop Screen',
-      category: 'Laptop',
-      description: 'Screen is cracked after a fall.',
-      date: 'Submitted: Oct 12, 2023',
-      ticketId: '#USR-8942',
-      status: 'NEED INFO',
-      icon: Icons.laptop_chromebook,
-      iconColor: Colors.blue,
-    ),
-    SupportRequest(
-      title: 'Password Reset Issue',
-      category: 'Password/Access',
-      description: 'Cannot login to the portal.',
-      date: 'Submitted: Oct 14, 2023',
-      ticketId: '#USR-8955',
-      status: 'NEED INFO',
-      icon: Icons.vpn_key_outlined,
-      iconColor: Colors.orange,
-    ),
-  ];
+  List<SupportRequest> _activeRequests = [];
+  List<SupportRequest> _pastRequests = [];
+  bool _isLoading = true;
+  String _searchQuery = '';
+  SupportRequest? _searchedTicketById;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        _loadTickets();
+      }
+    });
+
+    _loadTickets();
+  }
+
+  // UITLEG: We halen nu de tickets op van de ingelogde gebruiker
+  Future<void> _loadTickets() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      final int? userId = await _authService.getUserId();
+      final String status = _tabController.index == 0 ? 'OPEN' : 'CLOSED';
+
+      // We geven het userId mee aan de API call
+      final tickets = await _apiService.fetchRequests(status: status, userId: userId);
+
+      if (mounted) {
+        setState(() {
+          if (_tabController.index == 0) {
+            _activeRequests = tickets;
+          } else {
+            _pastRequests = tickets;
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fout bij het laden van tickets')),
+        );
+      }
+    }
+  }
+
+  Future<void> _searchTicketById(String value) async {
+    if (value.isEmpty) {
+      setState(() => _searchedTicketById = null);
+      return;
+    }
+
+    final int? id = int.tryParse(value);
+    if (id != null) {
+      final ticket = await _apiService.fetchTicketById(id);
+      setState(() {
+        _searchedTicketById = ticket;
+      });
+    } else {
+      setState(() => _searchedTicketById = null);
+    }
   }
 
   @override
@@ -48,91 +93,99 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     super.dispose();
   }
 
-  void _scanNewTicket() async {
-    final String? barcodeValue = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (context) => const BarcodeScannerPage(),
-      ),
-    );
+  List<SupportRequest> _getFilteredList(List<SupportRequest> list) {
+    if (_searchQuery.isEmpty) return list;
+    return list.where((request) {
+      final searchLower = _searchQuery.toLowerCase();
+      return request.title.toLowerCase().contains(searchLower) ||
+          request.ticketId.toLowerCase().contains(searchLower);
+    }).toList();
+  }
 
-    if (barcodeValue != null && mounted) {
-      Navigator.pushNamed(
-        context,
-        '/create-ticket',
-        arguments: barcodeValue,
-      );
+  void _createNewRequest() async {
+    final result = await Navigator.pushNamed(context, '/create-ticket');
+    if (result == true) {
+      _loadTickets();
+    }
+  }
+
+  Future<void> _logout() async {
+    await _authService.logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'My Support Requests',
-          style: TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
-        ),
+        title: const Text('My Tickets'),
         actions: [
-          // DEV BUTTON: Snel naar de chat voor testing
           IconButton(
-            icon: const Icon(Icons.bug_report, color: Colors.red),
-            tooltip: 'Dev: Open Chat',
-            onPressed: () {
-              Navigator.pushNamed(
-                context, 
-                '/support-chat', 
-                arguments: '#DEV-1234'
-              );
-            },
+            icon: const Icon(Icons.refresh, color: Colors.black87),
+            onPressed: _loadTickets,
           ),
           IconButton(
-            icon: const Icon(Icons.account_circle_outlined, color: Colors.black87),
-            onPressed: () {},
+            icon: const Icon(Icons.logout, color: Colors.black87),
+            tooltip: 'Logout',
+            onPressed: _logout,
           ),
         ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(
-              onChanged: (value) => setState(() => _searchQuery = value),
-              decoration: InputDecoration(
-                hintText: 'Search by title, ID or category',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          CustomSearchBar(
+            hintText: 'Search tickets...',
+            onChanged: (value) {
+              setState(() => _searchQuery = value);
+              _searchTicketById(value);
+            },
+          ),
+          if (_searchedTicketById != null)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Resultaat op ID:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  SupportRequestCard(
+                    request: _searchedTicketById!,
+                    onViewDetails: () {
+                      Navigator.pushNamed(context, '/support-chat', arguments: _searchedTicketById!.ticketId);
+                    },
+                  ),
+                  const Divider(thickness: 2),
+                ],
               ),
             ),
-          ),
           TabBar(
             controller: _tabController,
-            labelColor: Colors.blue[700],
-            indicatorColor: Colors.blue[700],
-            tabs: const [Tab(text: 'Active'), Tab(text: 'Past')],
+            labelColor: const Color(0xFF1976D2),
+            indicatorColor: const Color(0xFF1976D2),
+            tabs: const [
+              Tab(text: 'Active'),
+              Tab(text: 'Past'),
+            ],
           ),
           const Divider(height: 1),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRequestList(),
-                const Center(child: Text('Past Requests')),
-              ],
-            ),
+            child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildRequestList(_getFilteredList(_activeRequests)),
+                    _buildRequestList(_getFilteredList(_pastRequests)),
+                  ],
+                ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _scanNewTicket,
+        onPressed: _createNewRequest,
         backgroundColor: const Color(0xFF2962FF),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('New Request', style: TextStyle(color: Colors.white)),
@@ -141,32 +194,37 @@ class _TicketOverviewState extends State<TicketOverview> with SingleTickerProvid
     );
   }
 
-  Widget _buildRequestList() {
+  Widget _buildRequestList(List<SupportRequest> list) {
+    if (list.isEmpty) {
+      return ListView(
+        children: [
+          const SizedBox(height: 100),
+          const Center(
+            child: Column(
+              children: [
+                Icon(Icons.search_off, size: 64, color: Color(0xFFE0E0E0)),
+                SizedBox(height: 16),
+                Text('No tickets found for you', style: TextStyle(color: Color(0xFF757575))),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _requests.length,
+      itemCount: list.length,
       itemBuilder: (context, index) {
-        final request = _requests[index];
-        return Card(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey[200]!),
-          ),
-          child: ListTile(
-            leading: Icon(request.icon, color: request.iconColor),
-            title: Text(request.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Ticket ID: ${request.ticketId}'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.pushNamed(
-                context, 
-                '/support-chat', 
-                arguments: request.ticketId
-              );
-            },
-          ),
+        return SupportRequestCard(
+          request: list[index],
+          onViewDetails: () {
+            Navigator.pushNamed(
+              context,
+              '/support-chat',
+              arguments: list[index].ticketId,
+            );
+          },
         );
       },
     );
@@ -186,7 +244,12 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Ticket')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Scan Ticket QR'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
       body: MobileScanner(
         onDetect: (capture) {
           if (_isScanCompleted) return;
@@ -194,7 +257,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
           for (final barcode in barcodes) {
             if (barcode.rawValue != null) {
               setState(() => _isScanCompleted = true);
-              Navigator.of(context).pop(barcode.rawValue);
+              if (mounted) {
+                Navigator.of(context).pop(barcode.rawValue);
+              }
               break;
             }
           }

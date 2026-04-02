@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:rma_app/screens/login_screen.dart';
 import 'package:rma_app/screens/create_ticket.dart';
 import 'package:rma_app/screens/ticket_overview.dart';
+import 'package:rma_app/screens/forgot_password_screen.dart';
+import 'package:rma_app/screens/admin_screen.dart';
 import 'package:rma_app/screens/support_chat.dart';
 
 void main() {
@@ -15,16 +17,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'RMA App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      // Start op de login pagina
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
-        '/create-ticket': (context) => CreateTicketScreen(),
+        '/create-ticket': (context) => const CreateTicketScreen(),
         '/ticket-overview': (context) => const TicketOverview(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/admin': (context) => const AdminScreen(),
         '/support-chat': (context) => const SupportChatPage(),
       },
     );
