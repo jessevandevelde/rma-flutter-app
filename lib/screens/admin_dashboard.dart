@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../core/constants/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -9,250 +10,210 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
-  int _selectedIndex = 0;
+  final ApiService _apiService = ApiService();
+  String _userName = '';
+  int _openCount = 0;
+  int _inProgressCount = 0;
+  int _resolvedCount = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() => _isLoading = true);
+    
+    // 1. Laad echte naam uit SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final String storedName = prefs.getString('user_name') ?? '';
+    final String email = prefs.getString('user_email') ?? '';
+    
+    // 2. Haal statistieken uit de database
+    final stats = await _apiService.fetchDashboardData();
+
+    if (mounted) {
+      setState(() {
+        if (storedName.isNotEmpty) {
+          _userName = storedName;
+        } else if (email.isNotEmpty) {
+          // Fallback naar email als naam ontbreekt
+          _userName = email.split('@')[0];
+          _userName = _userName[0].toUpperCase() + _userName.substring(1);
+        } else {
+          _userName = 'Admin';
+        }
+        
+        // Update de statistieken
+        _openCount = stats['open'] ?? 0;
+        _inProgressCount = stats['in_progress'] ?? 0;
+        _resolvedCount = stats['resolved'] ?? 0;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFF),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 45,
-                        height: 45,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFE4D6),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.asset(
-                            'pictures/dmglogo.png',
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.phone_android, color: Colors.black54),
+        child: RefreshIndicator(
+          onRefresh: _loadDashboardData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 45,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFE4D6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              'pictures/dmglogo.png',
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.phone_android, color: Colors.black54),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Digital Concierge',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Digital Concierge',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    const Icon(Icons.notifications_none_outlined, size: 28, color: Color(0xFF64748B)),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Welcome Text - NU MET ECHTE NAAM
+                Text(
+                  'Welcome, $_userName',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
                   ),
-                  Stack(
-                    children: [
-                      const Icon(Icons.notifications_none_outlined, size: 28, color: Color(0xFF64748B)),
-                      Positioned(
-                        right: 4,
-                        top: 4,
-                        child: Container(
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Everything is running smoothly.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Status Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'CURRENT STATUS',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF64748B).withOpacity(0.7),
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Container(
                           width: 8,
                           height: 8,
                           decoration: const BoxDecoration(
-                            color: Colors.redAccent,
+                            color: Color(0xFF10B981),
                             shape: BoxShape.circle,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Welcome Text
-              const Text(
-                'Welcome, Marcus',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Everything is running smoothly.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Status Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'CURRENT STATUS',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF64748B).withOpacity(0.7),
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
-                          shape: BoxShape.circle,
+                        const SizedBox(width: 6),
+                        const Text(
+                          'SYSTEM LIVE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF10B981),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'SYSTEM LIVE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF10B981),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Status Cards
-              _buildStatusCard('Open', '12', const Color(0xFF3B82F6), Icons.confirmation_number_outlined, const Color(0xFFEFF6FF)),
-              const SizedBox(height: 16),
-              _buildStatusCard('In Progress', '5', const Color(0xFFB45309), Icons.pending_outlined, const Color(0xFFFFFBEB)),
-              const SizedBox(height: 16),
-              _buildStatusCard('Resolved', '24', const Color(0xFF10B981), Icons.check_circle_outline, const Color(0xFFECFDF5)),
-              
-              const SizedBox(height: 32),
-
-              // Quick Actions
-              Text(
-                'QUICK ACTIONS',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF64748B).withOpacity(0.7),
-                  letterSpacing: 1.1,
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildQuickAction(
-                    'New Ticket', 
-                    Icons.add, 
-                    const Color(0xFFEFF6FF), 
-                    const Color(0xFF3B82F6),
-                    onTap: () => Navigator.pushNamed(context, '/create-ticket'),
-                  ),
-                  _buildQuickAction(
-                    'View All', 
-                    Icons.grid_view, 
-                    const Color(0xFFF1F5F9), 
-                    const Color(0xFF475569),
-                    onTap: () => Navigator.pushNamed(context, '/ticket-overview'),
-                  ),
-                  _buildQuickAction(
-                    'Insights', 
-                    Icons.bar_chart, 
-                    const Color(0xFFF1F5F9), 
-                    const Color(0xFF475569),
-                    onTap: () {},
-                  ),
-                ],
-              ),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 32),
+                // Status Cards
+                _buildStatusCard('Open', _openCount.toString(), const Color(0xFF3B82F6), Icons.confirmation_number_outlined, const Color(0xFFEFF6FF)),
+                const SizedBox(height: 16),
+                _buildStatusCard('In Progress', _inProgressCount.toString(), const Color(0xFFB45309), Icons.pending_outlined, const Color(0xFFFFFBEB)),
+                const SizedBox(height: 16),
+                _buildStatusCard('Resolved', _resolvedCount.toString(), const Color(0xFF10B981), Icons.check_circle_outline, const Color(0xFFECFDF5)),
+                
+                const SizedBox(height: 32),
 
-              // Recent Feed
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'RECENT FEED',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF64748B).withOpacity(0.7),
-                      letterSpacing: 1.1,
-                    ),
+                // Quick Actions
+                Text(
+                  'QUICK ACTIONS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF64748B).withOpacity(0.7),
+                    letterSpacing: 1.1,
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'VIEW HISTORY',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF3B82F6),
-                      ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildQuickAction(
+                      'New Ticket', 
+                      Icons.add, 
+                      const Color(0xFFEFF6FF), 
+                      const Color(0xFF3B82F6),
+                      onTap: () => Navigator.pushNamed(context, '/create-ticket'),
                     ),
-                  ),
-                ],
-              ),
-              _buildFeedItem(
-                'Network Latency Alert',
-                'London Data Center spikes detected. Automated rerouting in progress.',
-                '2M AGO',
-                const Color(0xFF3B82F6),
-              ),
-              _buildFeedItem(
-                'New Onboarding',
-                'Marketing team added 3 new members. Provisioning initiated.',
-                '45M AGO',
-                const Color(0xFFB45309),
-              ),
-              const SizedBox(height: 80), // Space for bottom nav
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
+                    _buildQuickAction(
+                      'View All', 
+                      Icons.grid_view, 
+                      const Color(0xFFF1F5F9), 
+                      const Color(0xFF475569),
+                      onTap: () {
+                        // Afgehandeld door MainScreen
+                      },
+                    ),
+                    _buildQuickAction(
+                      'Insights', 
+                      Icons.bar_chart, 
+                      const Color(0xFFF1F5F9), 
+                      const Color(0xFF475569),
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 80),
+              ],
             ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) {
-            setState(() => _selectedIndex = index);
-            if (index == 1) {
-              Navigator.pushNamed(context, '/ticket-overview');
-            }
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF3B82F6),
-          unselectedItemColor: const Color(0xFF94A3B8),
-          selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-          unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'HOME'),
-            BottomNavigationBarItem(icon: Icon(Icons.confirmation_number_outlined), label: 'TICKETS'),
-            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'CHAT'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'PROFILE'),
-          ],
+          ),
         ),
       ),
     );
@@ -287,14 +248,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                count,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
+              _isLoading 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(
+                    count,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
             ],
           ),
           Container(
@@ -331,66 +294,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
               fontSize: 13,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeedItem(String title, String subtitle, String time, Color dotColor) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 6.0),
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: dotColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    Text(
-                      time,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF64748B),
-                    height: 1.5,
-                  ),
-                ),
-              ],
             ),
           ),
         ],

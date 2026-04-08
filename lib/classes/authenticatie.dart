@@ -2,13 +2,12 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 
 class Authenticatie {
   late final Dio _dio;
 
   Authenticatie() {
-    String baseUrl = 'http://127.0.0.1:8000';
+    String baseUrl = 'http://localhost:8000';
     if (!kIsWeb && Platform.isAndroid) {
       baseUrl = 'http://10.0.2.2:8000';
     }
@@ -38,13 +37,20 @@ class Authenticatie {
         final data = response.data;
         final prefs = await SharedPreferences.getInstance();
 
-        // Save User ID
-        final userId = data['user']?['id'];
-        if (userId != null) {
-          await prefs.setInt('user_id', userId);
+        // Sla User Informatie op
+        final user = data['user'];
+        if (user != null) {
+          await prefs.setInt('user_id', user['id'] ?? 0);
+          await prefs.setString('user_email', user['email'] ?? '');
+          await prefs.setString('user_name', user['first_name'] ?? '');
+          
+          // Gebruik de user_type_id van de backend voor admin check
+          if (user['user_type_id'] != null) {
+            await prefs.setInt('user_type_id', user['user_type_id']);
+          }
         }
 
-        // Save Auth Token (supporting various common keys like 'token' or 'access_token')
+        // Sla Auth Token op
         final token = data['access_token'] ?? data['token'];
         if (token != null) {
           await prefs.setString('auth_token', token.toString());
@@ -70,19 +76,18 @@ class Authenticatie {
     }
   }
 
-  Future<int?> getUserId() async {
+  Future<String?> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('user_id');
+    return prefs.getString('user_name');
   }
 
-  Future<String?> getToken() async {
+  Future<int?> getUserTypeId() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
+    return prefs.getInt('user_type_id');
   }
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_id');
-    await prefs.remove('auth_token');
+    await prefs.clear();
   }
 }

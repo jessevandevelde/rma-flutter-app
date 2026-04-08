@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../core/constants/app_colors.dart';
+import '../services/api_service.dart';
+import '../models/support_request.dart';
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
@@ -9,78 +10,40 @@ class TicketOverview extends StatefulWidget {
 }
 
 class _TicketOverviewState extends State<TicketOverview> {
-  int _selectedFilterIndex = 1; // Default to 'Open'
-  int _selectedBottomNavIndex = 1;
+  final ApiService _apiService = ApiService();
+  int _selectedFilterIndex = 0; // Default to 'All'
+  List<SupportRequest> _allTickets = [];
+  bool _isLoading = true;
 
   final List<String> _filters = ['All', 'Open', 'In Progress', 'Resolved'];
 
-  final List<Map<String, dynamic>> _allTickets = [
-    {
-      'id': 'TKT-8842',
-      'title': 'Server failure in North Data Center',
-      'description': 'The main production database is experiencing latency spikes affecting all...',
-      'priority': 'HIGH PRIORITY',
-      'priorityColor': Colors.red,
-      'time': '2h ago',
-      'status': 'OPEN',
-      'statusColor': const Color(0xFF3B82F6),
-    },
-    {
-      'id': 'TKT-8845',
-      'title': 'VPN Access Request: Marketing Team',
-      'description': 'Onboarding 3 new contractors who require secure access to internal CMS tools.',
-      'priority': 'MEDIUM',
-      'priorityColor': Colors.orange,
-      'time': '5h ago',
-      'status': 'OPEN',
-      'statusColor': const Color(0xFF3B82F6),
-    },
-    {
-      'id': 'TKT-8849',
-      'title': 'Software Update: Design Suite',
-      'description': 'Requesting deployment of the latest version of Creative Cloud for the UI team.',
-      'priority': 'LOW',
-      'priorityColor': Colors.grey,
-      'time': '1d ago',
-      'status': 'OPEN',
-      'statusColor': const Color(0xFF3B82F6),
-    },
-    {
-      'id': 'TKT-8851',
-      'title': 'Email Delivery Delay',
-      'description': 'Executive emails are being quarantined incorrectly by the spam filter.',
-      'priority': 'HIGH PRIORITY',
-      'priorityColor': Colors.red,
-      'time': '3h ago',
-      'status': 'OPEN',
-      'statusColor': const Color(0xFF3B82F6),
-    },
-    {
-      'id': 'TKT-8839',
-      'title': 'Cloud Sync Latency Issues',
-      'description': 'Users reporting slow sync times across all regions.',
-      'priority': 'MEDIUM',
-      'priorityColor': Colors.orange,
-      'time': '5h ago',
-      'status': 'IN PROGRESS',
-      'statusColor': Colors.orange,
-    },
-    {
-      'id': 'TKT-8820',
-      'title': 'Monitor Flicker Issue',
-      'description': 'User reporting constant flickering on their secondary monitor.',
-      'priority': 'LOW',
-      'priorityColor': Colors.grey,
-      'time': '2d ago',
-      'status': 'RESOLVED',
-      'statusColor': const Color(0xFF10B981),
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadTickets();
+  }
 
-  List<Map<String, dynamic>> get _filteredTickets {
+  Future<void> _loadTickets() async {
+    setState(() => _isLoading = true);
+    final tickets = await _apiService.fetchAllTickets();
+    if (mounted) {
+      setState(() {
+        _allTickets = tickets;
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<SupportRequest> get _filteredTickets {
     if (_selectedFilterIndex == 0) return _allTickets;
     String filterStatus = _filters[_selectedFilterIndex].toUpperCase();
-    return _allTickets.where((t) => t['status'] == filterStatus).toList();
+    
+    return _allTickets.where((t) {
+      if (filterStatus == 'RESOLVED') {
+        return t.status == 'RESOLVED' || t.status == 'CLOSED';
+      }
+      return t.status == filterStatus;
+    }).toList();
   }
 
   @override
@@ -202,14 +165,26 @@ class _TicketOverviewState extends State<TicketOverview> {
 
             // Ticket List
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: _filteredTickets.length,
-                itemBuilder: (context, index) {
-                  final ticket = _filteredTickets[index];
-                  return _buildTicketCard(ticket);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: _loadTickets,
+                    child: _filteredTickets.isEmpty 
+                      ? ListView(
+                          children: const [
+                            SizedBox(height: 100),
+                            Center(child: Text('No tickets found', style: TextStyle(color: Colors.grey))),
+                          ],
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          itemCount: _filteredTickets.length,
+                          itemBuilder: (context, index) {
+                            final ticket = _filteredTickets[index];
+                            return _buildTicketCard(ticket);
+                          },
+                        ),
+                  ),
             ),
           ],
         ),
@@ -219,26 +194,10 @@ class _TicketOverviewState extends State<TicketOverview> {
         backgroundColor: const Color(0xFF3B82F6),
         child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedBottomNavIndex,
-        onTap: (index) {
-          setState(() => _selectedBottomNavIndex = index);
-          if (index == 0) Navigator.pushReplacementNamed(context, '/admin-dashboard');
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF3B82F6),
-        unselectedItemColor: const Color(0xFF94A3B8),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'HOME'),
-          BottomNavigationBarItem(icon: Icon(Icons.confirmation_number_outlined), label: 'TICKETS'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'CHAT'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'PROFILE'),
-        ],
-      ),
     );
   }
 
-  Widget _buildTicketCard(Map<String, dynamic> ticket) {
+  Widget _buildTicketCard(SupportRequest ticket) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -260,17 +219,17 @@ class _TicketOverviewState extends State<TicketOverview> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                ticket['id'],
+                ticket.ticketId,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: ticket['statusColor'],
+                  color: ticket.statusColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  ticket['status'],
+                  ticket.status,
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
@@ -278,12 +237,12 @@ class _TicketOverviewState extends State<TicketOverview> {
           ),
           const SizedBox(height: 12),
           Text(
-            ticket['title'],
+            ticket.title,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
           ),
           const SizedBox(height: 8),
           Text(
-            ticket['description'],
+            ticket.description,
             style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -294,16 +253,16 @@ class _TicketOverviewState extends State<TicketOverview> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.report_problem, size: 14, color: ticket['priorityColor']),
+                  Icon(Icons.report_problem, size: 14, color: ticket.priorityColor),
                   const SizedBox(width: 4),
                   Text(
-                    ticket['priority'],
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ticket['priorityColor']),
+                    ticket.priority,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ticket.priorityColor),
                   ),
                 ],
               ),
               Text(
-                ticket['time'],
+                ticket.date,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
               ),
             ],
