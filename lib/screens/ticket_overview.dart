@@ -65,6 +65,16 @@ class _TicketOverviewState extends State<TicketOverview> {
       'status': 'IN PROGRESS',
       'statusColor': Colors.orange,
     },
+    {
+      'id': 'TKT-8820',
+      'title': 'Monitor Flicker Issue',
+      'description': 'User reporting constant flickering on their secondary monitor.',
+      'priority': 'LOW',
+      'priorityColor': Colors.grey,
+      'time': '2d ago',
+      'status': 'RESOLVED',
+      'statusColor': const Color(0xFF10B981),
+    },
   ];
 
   List<Map<String, dynamic>> get _filteredTickets {
@@ -256,7 +266,7 @@ class _TicketOverviewState extends State<TicketOverview> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6),
+                  color: ticket['statusColor'],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
