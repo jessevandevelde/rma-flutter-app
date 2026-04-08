@@ -26,9 +26,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // UITLEG: De 'bypass' is nu verwijderd.
-  // De app probeert nu ECHT verbinding te maken met je API.
-  // Als de server niet aanstaat, krijg je nu een foutmelding te zien.
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -47,13 +44,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Login succesvol!'),
-                backgroundColor: Colors.green,
-              ),
-            );
+            final String email = _emailController.text.toLowerCase();
+            
+            // UITLEG: Specifieke check voor jarrin@dmg.nu om altijd naar het dashboard te gaan
+            if (email == 'jarrin@dmg.nu' || email == 'admin@dmg.nu') {
+              Navigator.pushReplacementNamed(context, '/main');
+              return;
+            }
 
+            // Fallback op user_type_id uit de backend
             dynamic findValue(dynamic data, String key) {
               if (data is Map) {
                 if (data.containsKey(key)) return data[key];
@@ -71,10 +70,8 @@ class _LoginScreenState extends State<LoginScreen> {
             }
 
             final rawUserTypeId = findValue(response.data, 'user_type_id');
-            final int? userType = int.tryParse(rawUserTypeId?.toString() ?? '');
-
-            if (userType == 2) {
-              Navigator.pushReplacementNamed(context, '/admin');
+            if (rawUserTypeId?.toString() == '2') {
+              Navigator.pushReplacementNamed(context, '/main');
             } else {
               Navigator.pushReplacementNamed(context, '/ticket-overview');
             }
@@ -94,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Er is een fout opgetreden'), backgroundColor: Colors.red),
+            SnackBar(content: Text('Er is een fout opgetreden: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -158,7 +155,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // Email Input
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: CustomLabel(text: 'Email'),
@@ -172,7 +168,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Wachtwoord Input
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: CustomLabel(text: 'Password'),
@@ -192,7 +187,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     validator: (value) => (value == null || value.isEmpty) ? 'Enter password' : null,
                   ),
 
-                  // Forgot Password
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton(
