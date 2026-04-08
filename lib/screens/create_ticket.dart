@@ -3,9 +3,6 @@ import '../services/ticket_service.dart';
 import '../components/section_header.dart';
 import '../components/custom_label.dart';
 import '../components/custom_text_field.dart';
-import '../services/api_service.dart';
-import '../models/support_request.dart';
-import 'dart:math';
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
@@ -140,7 +137,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
