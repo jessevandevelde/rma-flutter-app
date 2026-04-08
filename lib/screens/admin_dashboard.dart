@@ -154,9 +154,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildQuickAction('New Ticket', Icons.add, const Color(0xFFEFF6FF), const Color(0xFF3B82F6)),
-                  _buildQuickAction('View All', Icons.grid_view, const Color(0xFFF1F5F9), const Color(0xFF475569)),
-                  _buildQuickAction('Insights', Icons.bar_chart, const Color(0xFFF1F5F9), const Color(0xFF475569)),
+                  _buildQuickAction(
+                    'New Ticket', 
+                    Icons.add, 
+                    const Color(0xFFEFF6FF), 
+                    const Color(0xFF3B82F6),
+                    onTap: () => Navigator.pushNamed(context, '/create-ticket'),
+                  ),
+                  _buildQuickAction(
+                    'View All', 
+                    Icons.grid_view, 
+                    const Color(0xFFF1F5F9), 
+                    const Color(0xFF475569),
+                    onTap: () => Navigator.pushNamed(context, '/ticket-overview'),
+                  ),
+                  _buildQuickAction(
+                    'Insights', 
+                    Icons.bar_chart, 
+                    const Color(0xFFF1F5F9), 
+                    const Color(0xFF475569),
+                    onTap: () {},
+                  ),
                 ],
               ),
 
@@ -217,7 +235,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index),
+          onTap: (index) {
+            setState(() => _selectedIndex = index);
+            if (index == 1) {
+              Navigator.pushNamed(context, '/ticket-overview');
+            }
+          },
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: const Color(0xFF3B82F6),
@@ -287,28 +310,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget _buildQuickAction(String label, IconData icon, Color bgColor, Color iconColor) {
-    return Column(
-      children: [
-        Container(
-          width: 70,
-          height: 70,
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(16),
+  Widget _buildQuickAction(String label, IconData icon, Color bgColor, Color iconColor, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: iconColor, size: 28),
           ),
-          child: Icon(icon, color: iconColor, size: 28),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
