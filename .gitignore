@@ -13,7 +13,7 @@
 migrate_working_dir/
 
 # IntelliJ related
-# *.iml
+*.iml
 # *.ipr
 # *.iws
 # .idea/
@@ -28,6 +28,7 @@ migrate_working_dir/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
+.flutter-plugins
 .pub-cache/
 .pub/
 /build/
@@ -44,4 +45,19 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-android/gradle/local.properties
+/android/.gradle/
+/android/local.properties
+
+# Flutter-generated platform files
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/ios/Flutter/ephemeral/
+/ios/Runner/GeneratedPluginRegistrant.h
+/ios/Runner/GeneratedPluginRegistrant.m
+/linux/flutter/ephemeral/
+/macos/Flutter/ephemeral/
+/windows/flutter/ephemeral/
+
+# IDE local state
+.idea/
+.vscode/
