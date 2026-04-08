@@ -18,7 +18,7 @@ class SupportRequestCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!),
+        side: BorderSide(color: Colors.grey.shade200),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -50,28 +50,20 @@ class SupportRequestCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
+                      // UITLEG: Hier tonen we nu de productnaam uit de 'ticket_data' tabel
+                      if (request.productName.isNotEmpty)
+                        Text(
+                          'Product: ${request.productName}',
+                          style: TextStyle(color: Colors.blue.shade700, fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
                       Text(
                         request.date,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50]!.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    request.status,
-                    style: TextStyle(
-                      color: Colors.blue[800],
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                _buildStatusBadge(request.status),
               ],
             ),
             const SizedBox(height: 16),
@@ -81,29 +73,39 @@ class SupportRequestCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Ticket ID: ${request.ticketId}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  'ID: ${request.ticketId}',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 ),
                 TextButton(
                   onPressed: onViewDetails,
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
                   child: const Row(
                     children: [
-                      Text(
-                        'View Details',
-                        style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                      ),
-                      Icon(Icons.chevron_right, color: Colors.blue, size: 18),
+                      Text('Details', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Icon(Icons.chevron_right, size: 18),
                     ],
                   ),
                 ),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: Colors.blue.shade800,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

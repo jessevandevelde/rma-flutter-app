@@ -90,7 +90,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime now = DateTime.now();
     final DateTime firstDate = now.add(const Duration(days: 2));
-    
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: firstDate,
@@ -113,21 +113,21 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
     // Mappen van de controllers naar de juiste Question IDs uit de database
     final List<Map<String, dynamic>> answers = [
-      {'question_id': 6, 'answer': _modelController.text},      
-      {'question_id': 7, 'answer': _serialController.text},     
+      {'question_id': 6, 'answer': _modelController.text},
+      {'question_id': 7, 'answer': _serialController.text},
       {'question_id': 1, 'answer': _descriptionController.text},
-      {'question_id': 2, 'answer': _frequencyController.text},   
-      {'question_id': 3, 'answer': _causeController.text},      
-      {'question_id': 4, 'answer': _symptomsController.text},   
-      {'question_id': 9, 'answer': _fullNameController.text},   
-      {'question_id': 10, 'answer': _companyController.text},   
-      {'question_id': 11, 'answer': _phoneController.text},     
-      {'question_id': 5, 'answer': _pickupDateController.text}, 
-      {'question_id': 13, 'answer': _isChecked ? 'Geaccepteerd' : 'Niet geaccepteerd'}, 
+      {'question_id': 2, 'answer': _frequencyController.text},
+      {'question_id': 3, 'answer': _causeController.text},
+      {'question_id': 4, 'answer': _symptomsController.text},
+      {'question_id': 9, 'answer': _fullNameController.text},
+      {'question_id': 10, 'answer': _companyController.text},
+      {'question_id': 11, 'answer': _phoneController.text},
+      {'question_id': 5, 'answer': _pickupDateController.text},
+      {'question_id': 13, 'answer': _isChecked ? 'Geaccepteerd' : 'Niet geaccepteerd'},
     ];
 
     final Ticket ticket = Ticket(
-      ticketTypeId: 1, 
+      ticketTypeId: 1,
       assetId: _cleanScannedCode(scannedCode), // Schoon de gescande code op
       answers: answers,
     );
@@ -146,6 +146,35 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     }
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 10),
+              Text('Succes'),
+            ],
+          ),
+          content: const Text('Uw ticket is succesvol aangemaakt!'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Go back to overview
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
@@ -153,6 +182,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
@@ -160,8 +191,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         title: const Text('Ticket aanmaken',
             style: TextStyle(
                 color: Colors.black87, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -173,7 +202,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -214,25 +243,25 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             const SizedBox(height: 15),
             _buildLabel('Probleemfrequentie *'),
             _buildDropdownField(
-              'Selecteer frequentie', 
-              _frequencyController, 
+              'Selecteer frequentie',
+              _frequencyController,
               _frequencyOptions
             ),
             const SizedBox(height: 15),
             _buildLabel('Vermoedelijke oorzaak *'),
             _buildDropdownField(
-              'Selecteer vermoedelijke oorzaak', 
-              _causeController, 
+              'Selecteer vermoedelijke oorzaak',
+              _causeController,
               _causeOptions
             ),
             const SizedBox(height: 15),
             _buildLabel('Probleem verschijnselen *'),
             _buildDropdownField(
-              'Selecteer verschijnsel', 
-              _symptomsController, 
+              'Selecteer verschijnsel',
+              _symptomsController,
               _symptomOptions
             ),
-            
+
             const SizedBox(height: 25),
             _buildSectionHeader(Icons.person_outline, 'Persoonlijke gegevens'),
             const SizedBox(height: 15),
@@ -247,8 +276,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             const SizedBox(height: 15),
             _buildLabel('Ophaaldatum *'),
             _buildTextField(
-              'Selecteer een datum', 
-              _pickupDateController, 
+              'Selecteer een datum',
+              _pickupDateController,
               readOnly: true,
               onTap: () => _selectDate(context),
               suffixIcon: const Icon(Icons.calendar_today, size: 20, color: Colors.blueGrey),
@@ -259,7 +288,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             CheckboxListTile(
               title: const Text(
                 'Ik erken en ga ermee akkoord dat mijn apparaat tijdens het reparatieproces mogelijk wordt gewist of dat de gegevens ervan worden verwijderd. Ik begrijp dat deze maatregel noodzakelijk is om een effectieve reparatie te garanderen en mijn privacy en veiligheid te beschermen.\n\n'
-                'Ik heb een back-up gemaakt van alle noodzakelijke gegevens en begrijp dat Dragon Media Group / Toughbookparts niet verantwoordelijk is voor enig gegevensverlies dat zich tijdens het reparatieproces kan voordoen.',
+                'Ik heb een back-up gemaakt van alle noodzakelijke gegevens en begrijp dat Dragon Media Group / Toughbookparts niet verantwoordelijk is voor enig gegevensverlies dat zich tijdens het reparatieproces kan voorden.',
                 style: TextStyle(fontSize: 13),
               ),
               value: _isChecked,
@@ -283,7 +312,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15)),
                 ),
-                child: _isLoading 
+                child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -298,35 +327,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green),
-              SizedBox(width: 10),
-              Text('Succes'),
-            ],
-          ),
-          content: const Text('Uw ticket is succesvol aangemaakt!'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -380,7 +380,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
   Widget _buildDropdownField(String hint, TextEditingController controller, List<String> options) {
     return DropdownButtonFormField<String>(
-      value: options.contains(controller.text) ? controller.text : null,
+      initialValue: options.contains(controller.text) ? controller.text : null,
       items: options.map((String option) {
         return DropdownMenuItem<String>(
           value: option,

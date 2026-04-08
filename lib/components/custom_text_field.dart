@@ -30,6 +30,8 @@ class CustomTextField extends StatelessWidget {
       obscureText: obscureText,
       validator: validator,
       keyboardType: keyboardType,
+      enableInteractiveSelection: true,
+      selectionControls: MaterialTextSelectionControls(),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[400]),
