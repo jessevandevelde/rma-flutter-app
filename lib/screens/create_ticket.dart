@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/ticket_service.dart';
+import '../components/section_header.dart';
 import '../components/custom_label.dart';
 import '../components/custom_text_field.dart';
-import '../components/section_header.dart';
+import '../services/api_service.dart';
+import '../models/support_request.dart';
+import 'dart:math';
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
