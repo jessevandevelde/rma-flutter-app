@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import '../models/ticket.dart';
 
 class TicketService {
   late final Dio _dio;
@@ -40,11 +41,11 @@ class TicketService {
     ));
   }
 
-  Future<bool> createTicket(Map<String, dynamic> ticketData) async {
+  Future<bool> createTicket(Ticket ticket) async {
     try {
       final response = await _dio.post(
         '/api/ticket',
-        data: ticketData,
+        data: ticket.toJson(),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
