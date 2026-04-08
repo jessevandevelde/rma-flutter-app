@@ -60,6 +60,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   final found = findValue(value, key);
                   if (found != null) return found;
                 }
+              } else if (data is List) {
+                for (var item in data) {
+                  final found = findValue(item, key);
+                  if (found != null) return found;
+                }
               }
               return null;
             }
