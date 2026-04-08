@@ -1,17 +1,23 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 
 class TicketService {
   late final Dio _dio;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  // Note: For production, consider moving this to an environment variable or secure storage
+  final String _jwtSecret = 'rma-app-secret-2024';
 
   TicketService() {
-    // Gebruik 10.0.2.2 voor Android Emulator, localhost voor Windows/Web
+    // Dynamische baseUrl op basis van platform
     String baseUrl = 'http://localhost:8000';
-    if (!kIsWeb && Platform.isAndroid) {
-      baseUrl = 'http://10.0.2.2:8000';
+
+    if (!kIsWeb) {
+      if (Platform.isAndroid) {
+        // 10.0.2.2 is voor Android Emulators om de host machine te bereiken
+        baseUrl = 'http://10.0.2.2:8000';
+      }
     }
 
     _dio = Dio(BaseOptions(
@@ -21,19 +27,32 @@ class TicketService {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'jwt-secret': _jwtSecret,
       },
     ));
 
     // Voeg een interceptor toe om de token automatisch aan elke request toe te voegen
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'auth_token');
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
+          options.headers['usertoken'] = token;
         }
         return handler.next(options);
       },
     ));
+  }
+
+  Future<List<dynamic>?> getTickets() async {
+    try {
+      final response = await _dio.get('/api/tickets');
+      return response.data;
+    } on DioException catch (e) {
+      debugPrint('Fout bij ophalen tickets: ${e.message}');
+      return null;
+    }
   }
 
   Future<bool> createTicket(Map<String, dynamic> ticketData) async {
@@ -50,8 +69,8 @@ class TicketService {
       }
     } on DioException catch (e) {
       debugPrint('Fout bij aanmaken ticket: ${e.message}');
-      if (e.response != null) {
-        debugPrint('Response data: ${e.response?.data}');
+      if (e.type == DioExceptionType.connectionTimeout) {
+        debugPrint('Timeout: Is de server op wel bereikbaar?');
       }
       return false;
     }

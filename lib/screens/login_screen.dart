@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rma_app/classes/authenticatie.dart';
-import '../core/constants/app_colors.dart';
-import '../core/widgets/custom_button.dart';
+import '../components/custom_button.dart';
+import '../components/custom_label.dart';
+import '../components/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,6 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // UITLEG: De 'bypass' is nu verwijderd.
+  // De app probeert nu ECHT verbinding te maken met je API.
+  // Als de server niet aanstaat, krijg je nu een foutmelding te zien.
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -37,25 +41,61 @@ class _LoginScreenState extends State<LoginScreen> {
           _passwordController.text,
         );
 
-        setState(() {
-          _isLoading = false;
-        });
+      setState(() {
+        _isLoading = false;
+      });
 
         if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
           if (mounted) {
-            // HIER AANGEPAST: We gaan nu naar het admin dashboard
-            Navigator.pushReplacementNamed(context, '/admin-dashboard');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Login succesvol!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            dynamic findValue(dynamic data, String key) {
+              if (data is Map) {
+                if (data.containsKey(key)) return data[key];
+                for (var value in data.values) {
+                  final found = findValue(value, key);
+                  if (found != null) return found;
+                }
+              } else if (data is List) {
+                for (var item in data) {
+                  final found = findValue(item, key);
+                  if (found != null) return found;
+                }
+              }
+              return null;
+            }
+
+            final rawUserTypeId = findValue(response.data, 'user_type_id');
+            final int? userType = int.tryParse(rawUserTypeId?.toString() ?? '');
+
+            if (userType == 2) {
+              Navigator.pushReplacementNamed(context, '/admin');
+            } else {
+              Navigator.pushReplacementNamed(context, '/ticket-overview');
+            }
           }
         } else {
           if (mounted) {
-            String errorMsg = "Onbekende fout";
+            String errorMsg = "Login mislukt";
             if (response?.data != null && response?.data['message'] != null) {
               errorMsg = response?.data['message'];
             }
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Login mislukt: $errorMsg'), backgroundColor: Colors.red),
+              SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
             );
           }
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Er is een fout opgetreden'), backgroundColor: Colors.red),
+          );
         }
       } catch (e) {
         setState(() {
@@ -127,127 +167,68 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  _buildInputLabel('Email'),
-                  TextFormField(
+                  // Email Input
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: CustomLabel(text: 'Email'),
+                  ),
+                  CustomTextField(
                     controller: _emailController,
-                    decoration: _buildInputDecoration(
-                      hint: 'name@company.com',
-                      icon: Icons.person_outline,
-                    ),
+                    hint: 'name@company.com',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    keyboardType: TextInputType.emailAddress,
                     validator: (value) => (value == null || value.isEmpty) ? 'Enter email' : null,
                   ),
                   const SizedBox(height: 20),
 
-                  _buildInputLabel('Password'),
-                  TextFormField(
+                  // Wachtwoord Input
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: CustomLabel(text: 'Password'),
+                  ),
+                  CustomTextField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
-                    decoration: _buildInputDecoration(
-                      hint: '••••••••',
-                      icon: Icons.lock_outline,
-                    ).copyWith(
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                          color: const Color(0xFF64748B),
-                        ),
-                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                    hint: '••••••••',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: const Color(0xFF64748B),
                       ),
+                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
                     validator: (value) => (value == null || value.isEmpty) ? 'Enter password' : null,
                   ),
 
+                  // Forgot Password
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton(
-                      onPressed: () {},
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF1A56DB),
+                        padding: EdgeInsets.zero,
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/forgot-password');
+                      },
                       child: const Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          color: AppColors.primaryBlue,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        'Wachtwoord vergeten?',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   CustomButton(
                     text: 'Log In',
                     onPressed: _login,
                     isLoading: _isLoading,
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "Don't have an account? ",
-                        style: TextStyle(color: Color(0xFF64748B)),
-                      ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Text(
-                          "Contact Support",
-                          style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInputLabel(String label) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: Color(0xFF475569),
-          ),
-        ),
-      ),
-    );
-  }
-
-  InputDecoration _buildInputDecoration({required String hint, required IconData icon}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-      prefixIcon: Icon(icon, color: const Color(0xFF64748B)),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.redAccent),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
       ),
     );
   }

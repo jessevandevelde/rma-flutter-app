@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import '../services/ticket_service.dart';
 import '../core/constants/app_colors.dart';
+import '../services/ticket_service.dart';
+import '../components/section_header.dart';
+import '../components/custom_label.dart';
+import '../components/custom_text_field.dart';
+import '../services/api_service.dart';
+import '../models/support_request.dart';
+import 'dart:math';
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
@@ -10,6 +17,7 @@ class CreateTicketScreen extends StatefulWidget {
 }
 
 class _CreateTicketScreenState extends State<CreateTicketScreen> {
+  bool _isChecked = false;
   bool _isLoading = false;
   final TicketService _ticketService = TicketService();
 
@@ -42,26 +50,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     _phoneController.dispose();
     _pickupDateController.dispose();
     super.dispose();
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Succes'),
-        content: const Text('Uw ticket is succesvol aangemaakt.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Sluit dialoog
-              Navigator.pop(context); // Terug naar overzicht
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _handleFormSubmit(String? scannedCode) async {
@@ -98,142 +86,161 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     }
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 10),
+              Text('Succes'),
+            ],
+          ),
+          content: const Text('Uw ticket is succesvol aangemaakt!'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Go back to overview
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundGray,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.pureWhite,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Ticket aanmaken',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Ticket aanmaken',
+            style: TextStyle(
+                color: Colors.black87, fontWeight: FontWeight.bold)),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionHeader(Icons.business_outlined, 'BEDRIJF INFORMATIE'),
+            if (scannedCode != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.qr_code, color: Colors.blue),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text('Gescannde code: $scannedCode',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.blue)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            const SectionHeader(icon: Icons.business_outlined, title: 'Informatie'),
             const SizedBox(height: 15),
-            _buildLabel('Bedrijfsnaam'),
-            _buildTextField('Voer bedrijfsnaam in', controller: _companyController),
+            const CustomLabel(text: 'Intro Text'),
+            CustomTextField(hint: 'Introductie', controller: _introController),
             const SizedBox(height: 15),
-            _buildLabel('Telefoonnummer'),
-            _buildTextField('Voer telefoonnummer in', controller: _phoneController),
-            const SizedBox(height: 30),
-            _buildSectionHeader(Icons.description_outlined, 'TICKET DETAILS'),
+            const CustomLabel(text: 'Bekijk het reparatieproces'),
+            CustomTextField(hint: 'Reparatieproces', controller: _repairProcessController),
             const SizedBox(height: 15),
-            _buildLabel('Model'),
-            _buildTextField('Model van het apparaat', controller: _modelController),
+            const CustomLabel(text: 'Model / Type'),
+            CustomTextField(hint: 'Bijv: CF-XXXXXX of FZ-XXXXXX', controller: _modelController),
             const SizedBox(height: 15),
-            _buildLabel('Bericht'),
-            _buildTextField('Beschrijf het probleem...', maxLines: 5, controller: _descriptionController),
+            const CustomLabel(text: 'Serienummer'),
+            CustomTextField(hint: 'Voer serienummer in', controller: _serialController),
+            const SizedBox(height: 15),
+            const CustomLabel(text: 'Beschrijving van het probleem'),
+            CustomTextField(hint: 'Beschrijf het probleem in detail...', controller: _descriptionController, maxLines: 3),
+            const SizedBox(height: 15),
+            const CustomLabel(text: 'Probleemfrequentie'),
+            CustomTextField(hint: 'Hoe vaak komt het voor?', controller: _frequencyController),
+            const SizedBox(height: 15),
+            const CustomLabel(text: 'Vermoedelijke oorzaak'),
+            CustomTextField(hint: 'Wat denkt u dat de oorzaak is?', controller: _causeController),
+            const SizedBox(height: 15),
+            const CustomLabel(text: 'Symptomen'),
+            CustomTextField(hint: 'Wat merkt u aan het apparaat?', controller: _symptomsController),
+            const SizedBox(height: 15),
+            const CustomLabel(text: 'Persoonlijke gegevens'),
+            CustomTextField(hint: 'Naam / Afdeling', controller: _personalDataController),
+            const SizedBox(height: 15),
+            const CustomLabel(text: 'Uw bedrijfsnaam'),
+            CustomTextField(hint: 'Bedrijfsnaam', controller: _companyController),
+            const SizedBox(height: 15),
+            const CustomLabel(text: 'Jouw telefoonnummer'),
+            CustomTextField(hint: 'Telefoonnummer', controller: _phoneController, keyboardType: TextInputType.phone),
+            const SizedBox(height: 15),
+            const CustomLabel(text: 'Ophaaldatum'),
+            CustomTextField(hint: 'Gewenste ophaaldatum', controller: _pickupDateController),
+
+            const SizedBox(height: 10),
+
+            CheckboxListTile(
+              title: const Text(
+                'Ik erken en ga ermee akkoord dat mijn apparaat tijdens het reparatieproces mogelijk wordt gewist of dat de gegevens ervan worden verwijderd. Ik begrijp dat deze maatregel noodzakelijk is om een effectieve reparatie te garanderen en mijn privacy en veiligheid te beschermen.\n\n'
+                'Ik heb een back-up gemaakt van alle noodzakelijke gegevens en begrijp dat Dragon Media Group / Toughbookparts niet verantwoordelijk is voor enig gegevensverlies dat zich tijdens het reparatieproces kan voordoen.',
+                style: TextStyle(fontSize: 13),
+              ),
+              value: _isChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  _isChecked = value ?? false;
+                });
+              },
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
+
             const SizedBox(height: 20),
-            _buildUploadDocumentsButton(),
-            const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : () => _handleFormSubmit(scannedCode),
+                onPressed: (_isChecked && !_isLoading) ? () => _handleFormSubmit(scannedCode) : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+                  backgroundColor: _isChecked ? const Color(0xFF007AFF) : Colors.grey,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
                 ),
-                child: _isLoading 
+                child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Submit Ticket ', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
-                        Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                        Text('Submit Ticket ',
+                            style: TextStyle(fontSize: 18, color: Colors.white)),
+                        Icon(Icons.arrow_forward, color: Colors.white),
                       ],
                     ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(IconData icon, String title) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: AppColors.primaryBlue),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primaryBlue,
-            letterSpacing: 1.2,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
-      ),
-    );
-  }
-
-  Widget _buildTextField(String hint, {int maxLines = 1, TextEditingController? controller}) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        filled: true,
-        fillColor: AppColors.pureWhite,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderGray),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUploadDocumentsButton() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15),
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderGray),
-      ),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.file_present_outlined, color: AppColors.textGray),
-          SizedBox(width: 10),
-          Text(
-            'Upload Documents',
-            style: TextStyle(color: AppColors.textGray, fontWeight: FontWeight.w500),
-          ),
-        ],
       ),
     );
   }

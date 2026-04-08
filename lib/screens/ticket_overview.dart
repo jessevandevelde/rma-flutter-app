@@ -9,7 +9,7 @@ class TicketOverview extends StatefulWidget {
 }
 
 class _TicketOverviewState extends State<TicketOverview> {
-  int _selectedFilterIndex = 0;
+  int _selectedFilterIndex = 1; // Default to 'Open'
   int _selectedBottomNavIndex = 1;
 
   final List<String> _filters = ['All', 'Open', 'In Progress', 'Resolved'];
@@ -171,21 +171,21 @@ class _TicketOverviewState extends State<TicketOverview> {
               ),
             ),
 
-            const Padding(
-              padding: EdgeInsets.fromLTRB(24, 24, 24, 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'OPEN TICKETS OVERVIEW',
-                    style: TextStyle(
+                    '${_filters[_selectedFilterIndex].toUpperCase()} TICKETS OVERVIEW',
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF64748B),
                       letterSpacing: 1.1,
                     ),
                   ),
-                  Icon(Icons.filter_list, size: 20, color: Color(0xFF64748B)),
+                  const Icon(Icons.filter_list, size: 20, color: Color(0xFF64748B)),
                 ],
               ),
             ),
@@ -259,9 +259,9 @@ class _TicketOverviewState extends State<TicketOverview> {
                   color: const Color(0xFF3B82F6),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'OPEN',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                child: Text(
+                  ticket['status'],
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
             ],
