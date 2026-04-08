@@ -1,7 +1,7 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 
 class Authenticatie {
   late final Dio _dio;
@@ -53,24 +53,26 @@ class Authenticatie {
         final prefs = await SharedPreferences.getInstance();
 
         dynamic userTypeId;
-        if (data['user'] != null) {
-          userTypeId = data['user']['user_type_id'];
-        } else if (data['user_type_id'] != null) {
+        if (data['user_type_id'] != null) {
           userTypeId = data['user_type_id'];
+        } else if (data['user'] != null && data['user']['user_type_id'] != null) {
+          userTypeId = data['user']['user_type_id'];
         }
 
         // Save User ID
-        final userId = data['user']?['id'];
+        final userId = data['user']?['id'] ?? data['user_id'];
         if (userId != null) {
-          await prefs.setInt('user_id', userId);
+          await prefs.setInt('user_id', int.parse(userId.toString()));
         }
 
         // Save Auth Token
         if (token != null) {
           await prefs.setString('auth_token', token.toString());
-          if (userTypeId != null) {
-            await prefs.setInt('user_type_id', int.parse(userTypeId.toString()));
-          }
+        }
+
+        // Save User Type ID
+        if (userTypeId != null) {
+          await prefs.setInt('user_type_id', int.parse(userTypeId.toString()));
         }
       }
       return response;

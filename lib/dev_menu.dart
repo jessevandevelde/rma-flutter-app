@@ -61,7 +61,8 @@ class DevMenuDialog extends StatelessWidget {
             label: 'Create Ticket (RMM-100654)',
             onTap: () {
               Navigator.pop(context);
-              final String mockUrl = '$baseUrl/api/ticket?id=RMM-100654';
+              // Updated URL format to use curly braces as requested
+              final String mockUrl = '$baseUrl/api/ticket{RMM-100654}';
               
               Navigator.pushNamed(
                 context,
