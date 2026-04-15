@@ -1,6 +1,7 @@
 class Ticket {
   final int ticketTypeId;
   final dynamic assetId;
+  final dynamic userId;
   final List<Map<String, dynamic>> answers;
 
   Ticket({
@@ -13,6 +14,7 @@ class Ticket {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
       'ticket_type_id': ticketTypeId,
+      'user_id': userId,
       'answers': answers,
     };
 
