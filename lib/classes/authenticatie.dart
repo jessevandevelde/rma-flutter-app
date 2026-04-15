@@ -7,11 +7,8 @@ class Authenticatie {
   late final Dio _dio;
 
   Authenticatie() {
-    // Dynamische baseUrl op basis van platform
-    String baseUrl = 'http://127.0.0.1:8000';
-
+    String baseUrl = 'http://localhost:8000';
     if (!kIsWeb && Platform.isAndroid) {
-      // 10.0.2.2 is voor Android Emulators om de host machine te bereiken
       baseUrl = 'http://10.0.2.2:8000';
     }
 
@@ -49,30 +46,22 @@ class Authenticatie {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        final token = data['access_token'] ?? data['token'];
         final prefs = await SharedPreferences.getInstance();
 
-        dynamic userTypeId;
-        if (data['user_type_id'] != null) {
-          userTypeId = data['user_type_id'];
-        } else if (data['user'] != null && data['user']['user_type_id'] != null) {
-          userTypeId = data['user']['user_type_id'];
+        final user = data['user'] ?? data;
+        
+        if (user != null) {
+          await prefs.setInt('user_id', int.tryParse(user['id']?.toString() ?? '') ?? 0);
+          await prefs.setString('user_email', user['email'] ?? '');
+          await prefs.setString('user_name', user['first_name'] ?? '');
+          
+          final dynamic typeId = user['user_type_id'] ?? user['role_id'] ?? user['level'];
+          await prefs.setInt('user_type_id', int.tryParse(typeId?.toString() ?? '1') ?? 1);
         }
 
-        // Save User ID
-        final userId = data['user']?['id'] ?? data['user_id'];
-        if (userId != null) {
-          await prefs.setInt('user_id', int.parse(userId.toString()));
-        }
-
-        // Save Auth Token
+        final token = data['access_token'] ?? data['token'];
         if (token != null) {
           await prefs.setString('auth_token', token.toString());
-        }
-
-        // Save User Type ID
-        if (userTypeId != null) {
-          await prefs.setInt('user_type_id', int.parse(userTypeId.toString()));
         }
       }
       return response;
@@ -81,12 +70,12 @@ class Authenticatie {
     }
   }
 
-  Future<String?> getToken() async {
+  Future<String?> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
+    return prefs.getString('user_name');
   }
 
-  Future<int?> getUserType() async {
+  Future<int?> getUserTypeId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('user_type_id');
   }
@@ -98,20 +87,12 @@ class Authenticatie {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-    await prefs.remove('user_type_id');
-    await prefs.remove('user_id');
+    await prefs.clear();
   }
 
   Future<Response?> forgotPassword(String email) async {
     try {
-      final response = await _dio.post(
-        '/api/auth/forgot-password',
-        data: {
-          'email': email,
-        },
-      );
-      return response;
+      return await _dio.post('/api/auth/forgot-password', data: {'email': email});
     } on DioException catch (e) {
       return e.response;
     }
