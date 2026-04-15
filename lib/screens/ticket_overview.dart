@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:rma_app/classes/authenticatie.dart';
+import '../services/api_service.dart';
 import '../models/support_request.dart';
-import '../components/support_request_card.dart';
-import '../components/custom_search_bar.dart';
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
@@ -12,250 +9,265 @@ class TicketOverview extends StatefulWidget {
   State<TicketOverview> createState() => _TicketOverviewState();
 }
 
-class _TicketOverviewState extends State<TicketOverview> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final Authenticatie _authService = Authenticatie();
-  String _searchQuery = '';
+class _TicketOverviewState extends State<TicketOverview> {
+  final ApiService _apiService = ApiService();
+  int _selectedFilterIndex = 0; // Default to 'All'
+  List<SupportRequest> _allTickets = [];
+  bool _isLoading = true;
 
-  final List<SupportRequest> _requests = [
-    SupportRequest(
-      title: 'Broken Laptop Screen',
-      category: 'Laptop',
-      description: 'Screen is cracked after a fall.',
-      date: 'Submitted: Oct 12, 2023',
-      ticketId: '#USR-8942',
-      status: 'NEED INFO',
-      icon: Icons.laptop_chromebook,
-      iconColor: Colors.blue,
-    ),
-    SupportRequest(
-      title: 'Password Reset Issue',
-      category: 'Password/Access',
-      description: 'Cannot login to the portal.',
-      date: 'Submitted: Oct 14, 2023',
-      ticketId: '#USR-8955',
-      status: 'NEED INFO',
-      icon: Icons.vpn_key_outlined,
-      iconColor: Colors.orange,
-    ),
-  ];
+  final List<String> _filters = ['All', 'Open', 'In Progress', 'Resolved'];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _loadTickets();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  List<SupportRequest> get _filteredRequests {
-    if (_searchQuery.isEmpty) return _requests;
-    return _requests.where((request) {
-      final searchLower = _searchQuery.toLowerCase();
-      return request.title.toLowerCase().contains(searchLower) ||
-          request.ticketId.toLowerCase().contains(searchLower) ||
-          request.category.toLowerCase().contains(searchLower);
-    }).toList();
-  }
-
-  Future<void> _scanNewTicket() async {
-    final String? barcodeValue = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (context) => const BarcodeScannerPage(),
-      ),
-    );
-
-    if (!mounted) return;
-
-    if (barcodeValue != null) {
-      Navigator.pushNamed(
-        context,
-        '/create-ticket',
-        arguments: barcodeValue,
-      );
-    }
-  }
-
-  Future<void> _logout() async {
-    await _authService.logout();
+  Future<void> _loadTickets() async {
+    setState(() => _isLoading = true);
+    final tickets = await _apiService.fetchAllTickets();
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/');
+      setState(() {
+        _allTickets = tickets;
+        _isLoading = false;
+      });
     }
+  }
+
+  List<SupportRequest> get _filteredTickets {
+    if (_selectedFilterIndex == 0) return _allTickets;
+    String filterStatus = _filters[_selectedFilterIndex].toUpperCase();
+    
+    return _allTickets.where((t) {
+      if (filterStatus == 'RESOLVED') {
+        return t.status == 'RESOLVED' || t.status == 'CLOSED';
+      }
+      return t.status == filterStatus;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ticket Overview'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.bug_report, color: Colors.red),
-            tooltip: 'Dev: Open Chat',
-            onPressed: () => Navigator.pushNamed(context, '/support-chat', arguments: '#DEV-1234'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black87),
-            tooltip: 'Logout',
-            onPressed: _logout,
-          ),
-        ],
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+      backgroundColor: const Color(0xFFF8FAFF),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blueAccent),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, color: Colors.blueAccent),
+                  const Icon(Icons.menu, color: Color(0xFF1E293B)),
+                  const Text(
+                    'Digital Concierge',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'User Menu',
-                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  const CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Color(0xFFFFE4D6),
+                    child: Icon(Icons.person, color: Colors.orange, size: 20),
                   ),
                 ],
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.qr_code_scanner),
-              title: const Text('Scan QR-Code'),
-              onTap: () {
-                Navigator.pop(context);
-                _scanNewTicket();
-              },
+
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search tickets...',
+                    hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                    prefixIcon: Icon(Icons.search, color: Color(0xFF64748B)),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.bug_report),
-              title: const Text('Test QR Link (Dev)'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(
-                  context,
-                  '/create-ticket',
-                  arguments: 'https://dmg.support/qr?id=RMM-923478&login_token=gBX1dW1N',
-                );
-              },
+
+            // Filter Tabs
+            const SizedBox(height: 24),
+            Container(
+              height: 60,
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF3F9),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: List.generate(_filters.length, (index) {
+                  bool isSelected = _selectedFilterIndex == index;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedFilterIndex = index),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ]
+                              : null,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          _filters[index],
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
             ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Logout', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _logout();
-              },
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${_filters[_selectedFilterIndex].toUpperCase()} TICKETS OVERVIEW',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64748B),
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const Icon(Icons.filter_list, size: 20, color: Color(0xFF64748B)),
+                ],
+              ),
+            ),
+
+            // Ticket List
+            Expanded(
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: _loadTickets,
+                    child: _filteredTickets.isEmpty 
+                      ? ListView(
+                          children: const [
+                            SizedBox(height: 100),
+                            Center(child: Text('No tickets found', style: TextStyle(color: Colors.grey))),
+                          ],
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          itemCount: _filteredTickets.length,
+                          itemBuilder: (context, index) {
+                            final ticket = _filteredTickets[index];
+                            return _buildTicketCard(ticket);
+                          },
+                        ),
+                  ),
             ),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          CustomSearchBar(
-            hintText: 'Search by title, ID or category',
-            onChanged: (value) => setState(() => _searchQuery = value),
-          ),
-          TabBar(
-            controller: _tabController,
-            labelColor: Colors.blue[700],
-            indicatorColor: Colors.blue[700],
-            tabs: const [Tab(text: 'Active'), Tab(text: 'Past')],
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRequestList(),
-                const Center(child: Text('Past Requests')),
-              ],
-            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.pushNamed(context, '/create-ticket'),
+        backgroundColor: const Color(0xFF3B82F6),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
+      ),
+    );
+  }
+
+  Widget _buildTicketCard(SupportRequest ticket) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _scanNewTicket,
-        backgroundColor: const Color(0xFF2962FF),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Request', style: TextStyle(color: Colors.white)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-      ),
-    );
-  }
-
-  Widget _buildRequestList() {
-    final filtered = _filteredRequests;
-    if (filtered.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text('No requests found', style: TextStyle(color: Colors.grey[600])),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) {
-        return SupportRequestCard(
-          request: filtered[index],
-          onViewDetails: () {
-            Navigator.pushNamed(
-              context,
-              '/support-chat',
-              arguments: filtered[index].ticketId,
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class BarcodeScannerPage extends StatefulWidget {
-  const BarcodeScannerPage({super.key});
-
-  @override
-  State<BarcodeScannerPage> createState() => _BarcodeScannerPageState();
-}
-
-class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
-  bool _isScanCompleted = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Scan Ticket')),
-      body: MobileScanner(
-        onDetect: (capture) {
-          if (_isScanCompleted) return;
-          final List<Barcode> barcodes = capture.barcodes;
-          for (final barcode in barcodes) {
-            if (barcode.rawValue != null) {
-              setState(() => _isScanCompleted = true);
-              debugPrint('Barcode gevonden! ${barcode.rawValue}');
-              if (mounted) {
-                Navigator.of(context).pop(barcode.rawValue);
-              }
-              break;
-            }
-          }
-        },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                ticket.ticketId,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: ticket.statusColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  ticket.status,
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            ticket.title,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            ticket.description,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.report_problem, size: 14, color: ticket.priorityColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    ticket.priority,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: ticket.priorityColor),
+                  ),
+                ],
+              ),
+              Text(
+                ticket.date,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

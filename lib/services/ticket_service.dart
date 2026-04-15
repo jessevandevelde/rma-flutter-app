@@ -2,13 +2,16 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import '../models/ticket.dart';
 
 class TicketService {
   late final Dio _dio;
+  // Note: For production, consider moving this to an environment variable or secure storage
+  final String _jwtSecret = 'rma-app-secret-2024';
 
   TicketService() {
-    // Dynamische baseUrl op basis van platform
-    String baseUrl = 'http://localhost:8000';
+    // Dynamische baseUrl op basis van platform, consistent met Authenticatie class
+    String baseUrl = 'http://127.0.0.1:8000';
 
     if (!kIsWeb) {
       if (Platform.isAndroid) {
@@ -24,6 +27,7 @@ class TicketService {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'jwt-secret': _jwtSecret,
       },
     ));
 
@@ -34,17 +38,28 @@ class TicketService {
         final token = prefs.getString('auth_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
+          options.headers['usertoken'] = token;
         }
         return handler.next(options);
       },
     ));
   }
 
-  Future<bool> createTicket(Map<String, dynamic> ticketData) async {
+  Future<List<dynamic>?> getTickets() async {
+    try {
+      final response = await _dio.get('/api/tickets');
+      return response.data;
+    } on DioException catch (e) {
+      debugPrint('Fout bij ophalen tickets: ${e.message}');
+      return null;
+    }
+  }
+
+  Future<bool> createTicket(Ticket ticket) async {
     try {
       final response = await _dio.post(
         '/api/ticket',
-        data: ticketData,
+        data: ticket.toJson(),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -54,6 +69,10 @@ class TicketService {
       }
     } on DioException catch (e) {
       debugPrint('Fout bij aanmaken ticket: ${e.message}');
+      if (e.response != null) {
+        debugPrint('Server error data: ${e.response?.data}');
+        debugPrint('Server status code: ${e.response?.statusCode}');
+      }
       if (e.type == DioExceptionType.connectionTimeout) {
         debugPrint('Timeout: Is de server op wel bereikbaar?');
       }
