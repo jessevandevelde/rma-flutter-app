@@ -1,19 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="924e7c20-c270-45c0-b93b-6948e90d49fb" name="Changes" comment="">
+    <list default="true" id="f03d1fc7-d037-410b-bcc9-0e78d57e597a" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/devtools_options.yaml.backup" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/models/ticket.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/screens/admin_dashboard.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/screens/main_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/rma-flutter-app.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/rma-flutter-app.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_27-3-2026_10_22_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_27-3-2026_10_22__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_4_1_2026_11_13_AM_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_4_1_2026_11_13_AM__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_26-3-2026_09_28_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_26-3-2026_09_28__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/support_chat.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/support_chat.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/linux/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/linux/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/linux/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/linux/flutter/generated_plugins.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/devtools_options.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/devtools_options.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/classes/authenticatie.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/classes/authenticatie.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/dev_menu.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/dev_menu.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/support_request.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/support_request.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/create_ticket.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/create_ticket.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/login_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/login_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/ticket_overview.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/ticket_overview.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/api_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/ticket_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/ticket_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,64 +47,35 @@
     <option name="formatViaClangd" value="false" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_BRANCH_BY_REPOSITORY">
-      <map>
-        <entry key="$PROJECT_DIR$" value="development" />
-      </map>
-    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
     &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;Samiakiya&quot;
+    &quot;assignee&quot;: &quot;Colin-B-033&quot;
   }
-}</component>
-  <component name="GitHubPullRequestState">{
-  &quot;prStates&quot;: [
-    {
-      &quot;id&quot;: {
-        &quot;id&quot;: &quot;PR_kwDORYek2c7M_V_g&quot;,
-        &quot;number&quot;: 11
-      },
-      &quot;lastSeen&quot;: 1774428817270
-    }
-  ]
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/jessevandevelde/rma-flutter-app.git&quot;,
-    &quot;accountId&quot;: &quot;ad65fc02-2f45-4f6b-9303-17b9e7e148da&quot;
+    &quot;accountId&quot;: &quot;43f6eded-7af9-4388-9e26-40c5351dbb7e&quot;
   }
 }</component>
-  <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
-  </component>
   <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 1
+  &quot;associatedIndex&quot;: 8
 }</component>
-  <component name="ProjectId" id="3Bke2B1xBKz3vni1uV0i2DaxA9C" />
+  <component name="ProjectId" id="3BQgyiVaVupbOa7RrnNpmcXO3lH" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Flutter.main.dart.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
+    "Flutter.main.dart.executor": "Debug",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "supportchat",
-    "io.flutter.project.isFirstOpen": "true",
+    "git-widget-placeholder": "Merging supportchat",
     "io.flutter.reload.alreadyRun": "true",
-    "kotlin-language-version-configured": "true",
-    "settings.editor.selected.configurable": "flutter.settings",
-    "show.migrate.to.gradle.popup": "false"
+    "settings.editor.selected.configurable": "flutter.settings"
   }
 }]]></component>
   <component name="RunManager">
@@ -93,22 +87,28 @@
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="924e7c20-c270-45c0-b93b-6948e90d49fb" name="Changes" comment="" />
-      <created>1775037288095</created>
+      <created>1774426965202</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1775037288095</updated>
+      <updated>1774426965202</updated>
     </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/screens/login_screen.dart</url>
-          <line>136</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Added new admin pages" />
+    <MESSAGE value="Changes to the frond end of the admin pages, so we can add the backend now" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changes to the frond end of the admin pages, so we can add the backend now" />
   </component>
 </project>

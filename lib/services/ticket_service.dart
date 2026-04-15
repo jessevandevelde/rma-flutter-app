@@ -1,16 +1,18 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import '../models/ticket.dart';
 
 class TicketService {
   late final Dio _dio;
   // Note: For production, consider moving this to an environment variable or secure storage
-  final String _jwtSecret = 'rma-app-secret-2024'; 
+  final String _jwtSecret = 'rma-app-secret-2024';
 
   TicketService() {
-    // Dynamische baseUrl op basis van platform
-    String baseUrl = 'http://localhost:8000';
+    // Dynamische baseUrl op basis van platform, consistent met Authenticatie class
+    String baseUrl = 'http://127.0.0.1:8000';
 
     if (!kIsWeb) {
       if (Platform.isAndroid) {
@@ -54,11 +56,11 @@ class TicketService {
     }
   }
 
-  Future<bool> createTicket(Map<String, dynamic> ticketData) async {
+  Future<bool> createTicket(Ticket ticket) async {
     try {
       final response = await _dio.post(
         '/api/ticket',
-        data: ticketData,
+        data: ticket.toJson(),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

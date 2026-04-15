@@ -1,13 +1,13 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 
 class Authenticatie {
   late final Dio _dio;
 
   Authenticatie() {
-    String baseUrl = 'http://127.0.0.1:8000';
+    String baseUrl = 'http://localhost:8000';
     if (!kIsWeb && Platform.isAndroid) {
       baseUrl = 'http://10.0.2.2:8000';
     }
@@ -19,6 +19,17 @@ class Authenticatie {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+      },
+    ));
+
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
       },
     ));
   }
@@ -37,13 +48,17 @@ class Authenticatie {
         final data = response.data;
         final prefs = await SharedPreferences.getInstance();
 
-        // Save User ID
-        final userId = data['user']?['id'];
-        if (userId != null) {
-          await prefs.setInt('user_id', userId);
+        final user = data['user'] ?? data;
+        
+        if (user != null) {
+          await prefs.setInt('user_id', int.tryParse(user['id']?.toString() ?? '') ?? 0);
+          await prefs.setString('user_email', user['email'] ?? '');
+          await prefs.setString('user_name', user['first_name'] ?? '');
+          
+          final dynamic typeId = user['user_type_id'] ?? user['role_id'] ?? user['level'];
+          await prefs.setInt('user_type_id', int.tryParse(typeId?.toString() ?? '1') ?? 1);
         }
 
-        // Save Auth Token (supporting various common keys like 'token' or 'access_token')
         final token = data['access_token'] ?? data['token'];
         if (token != null) {
           await prefs.setString('auth_token', token.toString());
@@ -55,18 +70,14 @@ class Authenticatie {
     }
   }
 
-  Future<Response?> forgotPassword(String email) async {
-    try {
-      final response = await _dio.post(
-        '/api/auth/forgot-password',
-        data: {
-          'email': email,
-        },
-      );
-      return response;
-    } on DioException catch (e) {
-      return e.response;
-    }
+  Future<String?> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_name');
+  }
+
+  Future<int?> getUserTypeId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_type_id');
   }
 
   Future<int?> getUserId() async {
@@ -74,14 +85,16 @@ class Authenticatie {
     return prefs.getInt('user_id');
   }
 
-  Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
-  }
-
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_id');
-    await prefs.remove('auth_token');
+    await prefs.clear();
+  }
+
+  Future<Response?> forgotPassword(String email) async {
+    try {
+      return await _dio.post('/api/auth/forgot-password', data: {'email': email});
+    } on DioException catch (e) {
+      return e.response;
+    }
   }
 }
