@@ -9,7 +9,7 @@ class ApiService {
   late final Dio _dio;
 
   ApiService() {
-    String baseUrl = 'http://localhost:8000';
+    String baseUrl = 'http://127.0.0.1:8000';
     if (!kIsWeb && Platform.isAndroid) {
       baseUrl = 'http://10.0.2.2:8000';
     }
@@ -73,14 +73,20 @@ class ApiService {
     // Priority mapping
     final priorityStr = (json['priority'] ?? 'LOW').toString().toUpperCase();
     Color pColor = Colors.grey;
-    if (priorityStr.contains('HIGH')) pColor = Colors.red;
-    else if (priorityStr.contains('MEDIUM')) pColor = Colors.orange;
+    if (priorityStr.contains('HIGH')) {
+      pColor = Colors.red;
+    } else if (priorityStr.contains('MEDIUM')) {
+      pColor = Colors.orange;
+    }
 
     // Status mapping
     final statusName = (statusObj?['name'] ?? 'OPEN').toString().toUpperCase();
     Color sColor = const Color(0xFF3B82F6); // Default Blue for OPEN
-    if (statusName == 'IN PROGRESS') sColor = Colors.orange;
-    else if (statusName == 'RESOLVED' || statusName == 'CLOSED') sColor = const Color(0xFF10B981);
+    if (statusName == 'IN PROGRESS') {
+      sColor = Colors.orange;
+    } else if (statusName == 'RESOLVED' || statusName == 'CLOSED') {
+      sColor = const Color(0xFF10B981);
+    }
 
     return SupportRequest(
       title: json['subject'] ?? asset?['description'] ?? 'Ticket #${json['id']}',

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,6 +69,10 @@ class TicketService {
       }
     } on DioException catch (e) {
       debugPrint('Fout bij aanmaken ticket: ${e.message}');
+      if (e.response != null) {
+        debugPrint('Server error data: ${e.response?.data}');
+        debugPrint('Server status code: ${e.response?.statusCode}');
+      }
       if (e.type == DioExceptionType.connectionTimeout) {
         debugPrint('Timeout: Is de server op wel bereikbaar?');
       }

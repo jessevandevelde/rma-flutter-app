@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/ticket_service.dart';
-import '../components/section_header.dart';
-import '../components/custom_label.dart';
-import '../components/custom_text_field.dart';
 import '../models/ticket.dart';
-import '../components/section_header.dart';
-import '../components/custom_label.dart';
-import '../components/custom_text_field.dart';
+import '../classes/authenticatie.dart';
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
@@ -115,38 +110,77 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   }
 
   Future<void> _handleFormSubmit(String? scannedCode) async {
+    // 1. Basis validatie: check of verplichte velden gevuld zijn
+    if (_modelController.text.trim().isEmpty || 
+        _serialController.text.trim().isEmpty || 
+        _descriptionController.text.trim().isEmpty ||
+        _fullNameController.text.trim().isEmpty ||
+        _phoneController.text.trim().isEmpty ||
+        _pickupDateController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vul a.u.b. alle verplichte velden (*) in.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
-    // Mappen van de controllers naar de juiste Question IDs uit de database
-    final List<Map<String, dynamic>> answers = [
-      {'question_id': 6, 'answer': _modelController.text},
-      {'question_id': 7, 'answer': _serialController.text},
-      {'question_id': 1, 'answer': _descriptionController.text},
-      {'question_id': 2, 'answer': _frequencyController.text},
-      {'question_id': 3, 'answer': _causeController.text},
-      {'question_id': 4, 'answer': _symptomsController.text},
-      {'question_id': 9, 'answer': _fullNameController.text},
-      {'question_id': 10, 'answer': _companyController.text},
-      {'question_id': 11, 'answer': _phoneController.text},
-      {'question_id': 5, 'answer': _pickupDateController.text},
-      {'question_id': 13, 'answer': _isChecked ? 'Geaccepteerd' : 'Niet geaccepteerd'},
-    ];
+    try {
+      final userId = await Authenticatie().getUserId();
+      
+      // DEBUG: Log wat we gaan versturen naar de console
+      debugPrint('--- Ticket Verzenden ---');
+      debugPrint('User ID: $userId');
+      debugPrint('Asset ID: ${_cleanScannedCode(scannedCode)}');
 
-    final Ticket ticket = Ticket(
-      ticketTypeId: 1,
-      assetId: _cleanScannedCode(scannedCode), // Schoon de gescande code op
-      answers: answers,
-    );
+      // Mappen van de controllers naar de juiste Question IDs uit de database
+      final List<Map<String, dynamic>> answers = [
+        {'question_id': 6, 'answer': _modelController.text.trim()},
+        {'question_id': 7, 'answer': _serialController.text.trim()},
+        {'question_id': 1, 'answer': _descriptionController.text.trim()},
+        {'question_id': 2, 'answer': _frequencyController.text},
+        {'question_id': 3, 'answer': _causeController.text},
+        {'question_id': 4, 'answer': _symptomsController.text},
+        {'question_id': 9, 'answer': _fullNameController.text.trim()},
+        {'question_id': 10, 'answer': _companyController.text.trim()},
+        {'question_id': 11, 'answer': _phoneController.text.trim()},
+        {'question_id': 5, 'answer': _pickupDateController.text},
+        {'question_id': 13, 'answer': _isChecked ? 'Geaccepteerd' : 'Niet geaccepteerd'},
+      ];
 
-    final bool success = await _ticketService.createTicket(ticket);
+      final Ticket ticket = Ticket(
+        ticketTypeId: 1,
+        // Zorg dat assetId null is als het een lege string is
+        assetId: (_cleanScannedCode(scannedCode)?.isEmpty ?? true) ? null : _cleanScannedCode(scannedCode),
+        userId: userId,
+        answers: answers,
+      );
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-      if (success) {
-        _showSuccessDialog();
-      } else {
+      final bool success = await _ticketService.createTicket(ticket);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (success) {
+          _showSuccessDialog();
+        } else {
+          // De 500 error details worden nu geprint in de Debug Console door TicketService
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Server fout (500). Controleer de Debug Console voor details.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Fout in _handleFormSubmit: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Er is iets fout gegaan bij het aanmaken van het ticket. Controleer uw verbinding.')),
+          SnackBar(content: Text('Er is een onverwachte fout opgetreden: $e')),
         );
       }
     }
