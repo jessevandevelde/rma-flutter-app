@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../models/support_request.dart';
+import '../classes/authenticatie.dart';
 
 class TicketOverview extends StatefulWidget {
   const TicketOverview({super.key});
@@ -11,15 +13,27 @@ class TicketOverview extends StatefulWidget {
 
 class _TicketOverviewState extends State<TicketOverview> {
   final ApiService _apiService = ApiService();
+  final Authenticatie _authService = Authenticatie();
   int _selectedFilterIndex = 0; // Default to 'All'
   List<SupportRequest> _allTickets = [];
   bool _isLoading = true;
+  String _userName = '';
+  String _userEmail = '';
 
   final List<String> _filters = ['All', 'Open', 'In Progress', 'Resolved'];
 
   @override
   void initState() {
     super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name') ?? 'User';
+      _userEmail = prefs.getString('user_email') ?? '';
+    });
     _loadTickets();
   }
 
@@ -31,6 +45,13 @@ class _TicketOverviewState extends State<TicketOverview> {
         _allTickets = tickets;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    await _authService.logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/');
     }
   }
 
@@ -69,10 +90,40 @@ class _TicketOverviewState extends State<TicketOverview> {
                       color: Color(0xFF1E293B),
                     ),
                   ),
-                  const CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Color(0xFFFFE4D6),
-                    child: Icon(Icons.person, color: Colors.orange, size: 20),
+                  
+                  // ACCOUNT MENU MET UITLOG OPTIE
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'logout') _handleLogout();
+                    },
+                    itemBuilder: (BuildContext context) => [
+                      PopupMenuItem<String>(
+                        enabled: false,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_userName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                            Text(_userEmail, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            const Divider(),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout, color: Colors.red, size: 20),
+                            SizedBox(width: 8),
+                            Text('Log Out', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Color(0xFFFFE4D6),
+                      child: Icon(Icons.person, color: Colors.orange, size: 20),
+                    ),
                   ),
                 ],
               ),
