@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="NONE" />
   </component>
@@ -22,43 +27,24 @@
     <option name="formatViaClangd" value="false" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_BRANCH_BY_REPOSITORY">
-      <map>
-        <entry key="$PROJECT_DIR$" value="development" />
-      </map>
-    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
     &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;Samiakiya&quot;
+    &quot;assignee&quot;: &quot;Colin-B-033&quot;
   }
 }</component>
-  <component name="GitHubPullRequestState">{
-  &quot;prStates&quot;: [
-    {
-      &quot;id&quot;: {
-        &quot;id&quot;: &quot;PR_kwDORYek2c7M_V_g&quot;,
-        &quot;number&quot;: 11
-      },
-      &quot;lastSeen&quot;: 1774428817270
-    }
-  ]
-}</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/jessevandevelde/rma-flutter-app.git",
-    "accountId": "c3a6cb98-3d6a-4b54-8ab3-7f323450d0a4"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/jessevandevelde/rma-flutter-app.git&quot;,
+    &quot;accountId&quot;: &quot;43f6eded-7af9-4388-9e26-40c5351dbb7e&quot;
   }
-}]]></component>
-  <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
-  </component>
+}</component>
   <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 1
+  &quot;associatedIndex&quot;: 8
 }</component>
-  <component name="ProjectId" id="3Bke2B1xBKz3vni1uV0i2DaxA9C" />
+  <component name="ProjectId" id="3BQgyiVaVupbOa7RrnNpmcXO3lH" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -92,10 +78,10 @@
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="924e7c20-c270-45c0-b93b-6948e90d49fb" name="Changes" comment="" />
-      <created>1775037288095</created>
+      <created>1774426965202</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1775037288095</updated>
+      <updated>1774426965202</updated>
     </task>
     <task id="LOCAL-00001" summary="werken chat voor de gebruiker">
       <option name="closed" value="true" />
@@ -112,15 +98,20 @@
     <MESSAGE value="werken chat voor de gebruiker" />
     <option name="LAST_COMMIT_MESSAGE" value="werken chat voor de gebruiker" />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/screens/login_screen.dart</url>
-          <line>136</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Added new admin pages" />
+    <MESSAGE value="Changes to the frond end of the admin pages, so we can add the backend now" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changes to the frond end of the admin pages, so we can add the backend now" />
   </component>
 </project>

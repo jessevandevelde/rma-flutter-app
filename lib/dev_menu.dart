@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class DevMenuIntent extends Intent {
   const DevMenuIntent();
@@ -24,6 +26,12 @@ class DevMenuDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic base URL for different platforms
+    String baseUrl = 'http://localhost:8000';
+    if (!kIsWeb && Platform.isAndroid) {
+      baseUrl = 'http://10.0.2.2:8000';
+    }
+
     return AlertDialog(
       title: const Row(
         children: [
@@ -50,11 +58,16 @@ class DevMenuDialog extends StatelessWidget {
           const SizedBox(height: 10),
           _DevMenuButton(
             icon: Icons.add_circle_outline,
-            label: 'Create Ticket (Placeholder)',
+            label: 'Create Ticket (RMM-100654)',
             onTap: () {
-              // Placeholder for future implementation
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Create ticket logic not implemented yet.')),
+              Navigator.pop(context);
+              // Updated URL format to use curly braces as requested
+              final String mockUrl = '$baseUrl/api/ticket{RMM-100654}';
+              
+              Navigator.pushNamed(
+                context,
+                '/create-ticket',
+                arguments: mockUrl,
               );
             },
           ),

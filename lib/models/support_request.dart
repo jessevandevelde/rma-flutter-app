@@ -9,8 +9,9 @@ class SupportRequest {
   final String status;
   final IconData icon;
   final Color iconColor;
-
-  // UITLEG: Deze nieuwe velden komen uit de 'ticket_data' tabel in de database
+  final String priority;
+  final Color priorityColor;
+  final Color statusColor;
   final String productName;
   final String serialNumber;
 
@@ -23,6 +24,9 @@ class SupportRequest {
     required this.status,
     required this.icon,
     required this.iconColor,
+    this.priority = 'LOW',
+    this.priorityColor = Colors.grey,
+    this.statusColor = Colors.blue,
     this.productName = '',
     this.serialNumber = '',
   });
