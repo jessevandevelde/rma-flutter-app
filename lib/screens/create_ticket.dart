@@ -81,16 +81,19 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
   // Haal alleen de ID uit de gescande code als het een URL is
   String? _cleanScannedCode(String? code) {
-    if (code == null) return null;
+    if (code == null || code.trim().isEmpty) return null;
+    
+    String cleanId = code.trim();
     try {
-      final uri = Uri.parse(code);
+      final uri = Uri.parse(cleanId);
       if (uri.queryParameters.containsKey('id')) {
-        return uri.queryParameters['id'];
+        cleanId = uri.queryParameters['id']!;
       }
     } catch (e) {
-      // Geen URL, stuur de originele code terug
+      // Geen URL, gebruik de originele (getrimde) code
     }
-    return code;
+    
+    return cleanId.isNotEmpty ? cleanId : null;
   }
 
   Future<void> _selectDate(BuildContext context) async {

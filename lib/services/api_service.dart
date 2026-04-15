@@ -9,7 +9,7 @@ class ApiService {
   late final Dio _dio;
 
   ApiService() {
-    String baseUrl = 'http://localhost:8000';
+    String baseUrl = 'http://127.0.0.1:8000';
     if (!kIsWeb && Platform.isAndroid) {
       baseUrl = 'http://10.0.2.2:8000';
     }

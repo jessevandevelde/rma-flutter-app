@@ -1,6 +1,6 @@
 class Ticket {
   final int ticketTypeId;
-  final String? assetId;
+  final dynamic assetId;
   final List<Map<String, dynamic>> answers;
 
   Ticket({
@@ -10,10 +10,15 @@ class Ticket {
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> data = {
       'ticket_type_id': ticketTypeId,
-      'asset_id': assetId,
       'answers': answers,
     };
+
+    if (assetId != null && assetId.toString().isNotEmpty) {
+      data['asset_id'] = assetId;
+    }
+
+    return data;
   }
 }
