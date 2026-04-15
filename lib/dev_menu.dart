@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:rma_app/classes/authenticatie.dart';
 
 class DevMenuIntent extends Intent {
   const DevMenuIntent();
 }
 
 class DevMenuAction extends Action<DevMenuIntent> {
+  static bool _isVisible = false;
+
   @override
   Object? invoke(DevMenuIntent intent) {
     final BuildContext? context = primaryFocus?.context;
-    if (context != null) {
+    if (context != null && !_isVisible) {
+      _isVisible = true;
       showDialog(
         context: context,
+        barrierDismissible: true,
         builder: (context) => const DevMenuDialog(),
-      );
+      ).then((_) => _isVisible = false);
     }
     return null;
   }
@@ -68,6 +73,20 @@ class DevMenuDialog extends StatelessWidget {
                 '/create-ticket',
                 arguments: mockUrl,
               );
+            },
+          ),
+          const SizedBox(height: 10),
+          _DevMenuButton(
+            icon: Icons.logout,
+            label: 'Logout',
+            onTap: () async {
+              Navigator.pop(context); // Close dialog
+              final auth = Authenticatie();
+              await auth.logout();
+              if (context.mounted) {
+                // Navigate back to login and clear navigation stack
+                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              }
             },
           ),
         ],
