@@ -6,6 +6,7 @@ class Ticket {
   Ticket({
     required this.ticketTypeId,
     this.assetId,
+    this.userId,
     required this.answers,
   });
 
