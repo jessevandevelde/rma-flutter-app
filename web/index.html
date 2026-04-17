@@ -1,46 +1,559 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIGURATIE — pas alleen deze constante aan
+// ─────────────────────────────────────────────────────────────────────────────
+const String _kBaseUrl = 'https://jouw-backend.nl/api';
 
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+// Hoe vaak worden nieuwe berichten opgehaald via /message/since/...
+const Duration _kPollInterval = Duration(seconds: 5);
 
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="$FLUTTER_BASE_HREF">
+// ─────────────────────────────────────────────────────────────────────────────
+// MODELLEN
+// ─────────────────────────────────────────────────────────────────────────────
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+/// Inlogresultaat van POST /api/auth/login
+class AuthResult {
+final String accessToken;
+final int userTypeId;
 
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="rma_app">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+const AuthResult({required this.accessToken, required this.userTypeId});
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+factory AuthResult.fromJson(Map<String, dynamic> json) => AuthResult(
+accessToken: json['access_token'] as String,
+userTypeId: json['user_type_id'] as int,
+);
+}
 
-  <title>rma_app</title>
-  <link rel="manifest" href="manifest.json">
-</head>
-<body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+/// Eén chatbericht uit de ticket_message tabel
+class ChatMessage {
+final int id;
+final String text;
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
-</body>
-</html>
+/// true  = verstuurd door de klant (user_type_id == 1 of user_id == null)
+/// false = verstuurd door support/admin
+final bool isFromCustomer;
+
+final String timeLabel; // "2:34 PM"
+final DateTime createdAt;
+
+const ChatMessage({
+required this.id,
+required this.text,
+required this.isFromCustomer,
+required this.timeLabel,
+required this.createdAt,
+});
+
+/// Parseert een JSON-object zoals de Laravel-backend teruggeeft.
+///
+/// Structuur (uit TicketMessage->with(['user','type'])):
+/// {
+///   "id": 25,
+///   "message": "...",
+///   "user_id": null,          // null = anonieme klant
+///   "ticket_message_type_id": 2,
+///   "created_at": "2023-04-18T05:13:30.000000Z",
+///   "user": { "id": 3, "user_type_id": 1, ... } | null
+/// }
+factory ChatMessage.fromJson(Map<String, dynamic> json) {
+final dt = DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+DateTime.now();
+
+final user = json['user'] as Map<String, dynamic>?;
+
+// user == null → anonieme klant
+// user_type_id == 1 → klant (zie UserType: 1=customer, 2=admin, 3=agent…)
+final isCustomer = user == null || (user['user_type_id'] as int?) == 1;
+
+return ChatMessage(
+id: json['id'] as int? ?? 0,
+text: json['message'] as String? ?? '',
+isFromCustomer: isCustomer,
+timeLabel: _formatTime(dt),
+createdAt: dt,
+);
+}
+
+static String _formatTime(DateTime dt) {
+final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+final m = dt.minute.toString().padLeft(2, '0');
+final p = dt.hour < 12 ? 'AM' : 'PM';
+return '$h:$m $p';
+}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API SERVICE
+// Werkt 1-op-1 met de bestaande routes/api.php:
+//
+//   POST /api/auth/login
+//   GET  /api/message/{ticket_id}
+//   GET  /api/message/since/{ticket_id}/{last_message_id}
+//   POST /api/message               body: { ticket_id, message }
+// ─────────────────────────────────────────────────────────────────────────────
+class SupportApiService {
+final String _token; // JWT access_token
+
+const SupportApiService(this._token);
+
+Map<String, String> get _headers => {
+'Content-Type': 'application/json',
+'Accept': 'application/json',
+// JWT middleware verwacht: Authorization: Bearer <token>
+  'Authorization': 'Bearer $_token',
+  };
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+
+  /// POST /api/auth/login  →  { access_token, token_type, expires_in, user_type_id }
+  static Future<AuthResult> login(String email, String password) async {
+  final uri = Uri.parse('$_kBaseUrl/auth/login');
+  final res = await http.post(
+  uri,
+  headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+  body: jsonEncode({'email': email, 'password': password}),
+  );
+  _assertOk(res);
+  return AuthResult.fromJson(jsonDecode(res.body));
+  }
+
+  // ── Berichten ───────────────────────────────────────────────────────────────
+
+  /// GET /api/message/{ticket_id}
+  /// Alle berichten voor dit ticket, gesorteerd op tijd (oudste eerst).
+  Future<List<ChatMessage>> fetchAll(int ticketId) async {
+    final uri = Uri.parse('$_kBaseUrl/message/$ticketId');
+    final res = await http.get(uri, headers: _headers);
+    _assertOk(res);
+
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final raw = body['messages'] as List<dynamic>? ?? [];
+      return raw
+      .cast<Map<String, dynamic>>()
+      .map(ChatMessage.fromJson)
+      .toList();
+      }
+
+      /// GET /api/message/since/{ticket_id}/{last_message_id}
+      /// Alleen berichten nieuwer dan last_message_id — gebruikt voor polling.
+      Future<List<ChatMessage>> fetchSince(int ticketId, int lastId) async {
+        final uri = Uri.parse('$_kBaseUrl/message/since/$ticketId/$lastId');
+        final res = await http.get(uri, headers: _headers);
+        _assertOk(res);
+
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        final raw = body['messages'] as List<dynamic>? ?? [];
+          return raw
+          .cast<Map<String, dynamic>>()
+          .map(ChatMessage.fromJson)
+          .toList();
+          }
+
+          /// POST /api/message  body: { ticket_id: int, message: string }
+          /// Slaat bericht op in ticket_message met user_id van ingelogde JWT-gebruiker.
+          Future<ChatMessage> send(int ticketId, String text) async {
+            final uri = Uri.parse('$_kBaseUrl/message');
+            final res = await http.post(
+            uri,
+            headers: _headers,
+            body: jsonEncode({'ticket_id': ticketId, 'message': text}),
+            );
+            _assertOk(res);
+
+            final body = jsonDecode(res.body) as Map<String, dynamic>;
+            return ChatMessage.fromJson(body['message'] as Map<String, dynamic>);
+            }
+
+            static void _assertOk(http.Response res) {
+            if (res.statusCode < 200 || res.statusCode >= 300) {
+            throw Exception('API ${res.statusCode}: ${res.body}');
+            }
+            }
+            }
+
+            // ─────────────────────────────────────────────────────────────────────────────
+            // ROUTE-ARGUMENT
+            // Gebruik bij navigatie:
+            //   Navigator.pushNamed(context, '/chat',
+            //     arguments: ChatPageArgs(ticketId: 2299, token: 'eyJ...'));
+            // ─────────────────────────────────────────────────────────────────────────────
+            class ChatPageArgs {
+            final int ticketId;
+            final String token; // JWT access_token uit /api/auth/login
+            const ChatPageArgs({required this.ticketId, required this.token});
+            }
+
+            // ─────────────────────────────────────────────────────────────────────────────
+            // CHAT PAGINA
+            // ─────────────────────────────────────────────────────────────────────────────
+            class SupportChatPage extends StatefulWidget {
+            const SupportChatPage({super.key});
+
+            @override
+            State<SupportChatPage> createState() => _SupportChatPageState();
+              }
+
+              class _SupportChatPageState extends State<SupportChatPage> {
+                final _inputCtrl = TextEditingController();
+                final _scrollCtrl = ScrollController();
+
+                late final SupportApiService _api;
+                late final int _ticketId;
+
+                List<ChatMessage> _messages = [];
+                  bool _loading = true;
+                  bool _sending = false;
+                  String? _error;
+                  Timer? _pollTimer;
+                  int _lastId = 0; // hoogste bericht-ID dat we kennen
+
+                  // ── Lifecycle ────────────────────────────────────────────────────────────────
+
+                  @override
+                  void didChangeDependencies() {
+                  super.didChangeDependencies();
+
+                  final args = ModalRoute.of(context)?.settings.arguments as ChatPageArgs?;
+                  if (args == null) {
+                  setState(() {
+                  _loading = false;
+                  _error = 'Geen ticket-gegevens meegegeven.';
+                  });
+                  return;
+                  }
+
+                  _ticketId = args.ticketId;
+                  _api = SupportApiService(args.token);
+
+                  _loadAll();
+
+                  // Poll elke 5 seconden voor nieuwe berichten van support-medewerker
+                  _pollTimer =
+                  Timer.periodic(_kPollInterval, (_) => _pollNew());
+                  }
+
+                  @override
+                  void dispose() {
+                  _pollTimer?.cancel();
+                  _inputCtrl.dispose();
+                  _scrollCtrl.dispose();
+                  super.dispose();
+                  }
+
+                  // ── Data ─────────────────────────────────────────────────────────────────────
+
+                  Future<void> _loadAll() async {
+                    setState(() { _loading = true; _error = null; });
+                    try {
+                    final msgs = await _api.fetchAll(_ticketId);
+                    if (!mounted) return;
+                    setState(() {
+                    _messages = msgs;
+                    _lastId = msgs.isNotEmpty ? msgs.last.id : 0;
+                    _loading = false;
+                    });
+                    _scrollToBottom();
+                    } catch (e) {
+                    if (!mounted) return;
+                    setState(() { _loading = false; _error = 'Laden mislukt: $e'; });
+                    }
+                    }
+
+                    Future<void> _pollNew() async {
+                      if (!mounted) return;
+                      try {
+                      final newMsgs = await _api.fetchSince(_ticketId, _lastId);
+                      if (!mounted || newMsgs.isEmpty) return;
+                      setState(() {
+                      _messages.addAll(newMsgs);
+                      _lastId = newMsgs.last.id;
+                      });
+                      _scrollToBottom();
+                      } catch (_) {
+                      // Stil falen bij polling — geen UI-verstoring
+                      }
+                      }
+
+                      Future<void> _send() async {
+                        final text = _inputCtrl.text.trim();
+                        if (text.isEmpty || _sending) return;
+
+                        // Optimistisch tonen vóór de API-call
+                        final optimistic = ChatMessage(
+                        id: -1,
+                        text: text,
+                        isFromCustomer: true,
+                        timeLabel: _nowLabel(),
+                        createdAt: DateTime.now(),
+                        );
+
+                        setState(() {
+                        _messages.add(optimistic);
+                        _sending = true;
+                        _error = null;
+                        });
+                        _inputCtrl.clear();
+                        _scrollToBottom();
+
+                        try {
+                        final saved = await _api.send(_ticketId, text);
+                        if (!mounted) return;
+                        setState(() {
+                        final idx = _messages.indexOf(optimistic);
+                        if (idx != -1) _messages[idx] = saved;
+                        _lastId = saved.id;
+                        _sending = false;
+                        });
+                        } catch (e) {
+                        if (!mounted) return;
+                        setState(() {
+                        _messages.remove(optimistic);
+                        _sending = false;
+                        _error = 'Versturen mislukt. Probeer opnieuw.';
+                        });
+                        }
+                        }
+
+                        // ── Helpers ──────────────────────────────────────────────────────────────────
+
+                        void _scrollToBottom() {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (_scrollCtrl.hasClients) {
+                        _scrollCtrl.animateTo(
+                        _scrollCtrl.position.maxScrollExtent,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOut,
+                        );
+                        }
+                        });
+                        }
+
+                        String _nowLabel() {
+                        final now = DateTime.now();
+                        final h = now.hour % 12 == 0 ? 12 : now.hour % 12;
+                        final m = now.minute.toString().padLeft(2, '0');
+                        final p = now.hour < 12 ? 'AM' : 'PM';
+                        return '$h:$m $p';
+                        }
+
+                        // ── UI ───────────────────────────────────────────────────────────────────────
+
+                        @override
+                        Widget build(BuildContext context) {
+                        return Scaffold(
+                        backgroundColor: const Color(0xFFF3F4F6),
+                        appBar: AppBar(
+                        backgroundColor: Colors.white,
+                        elevation: 1,
+                        leading: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF2563EB)),
+                        onPressed: () => Navigator.pop(context),
+                        ),
+                        title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                        const Text('Support Chat',
+                        style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+                        Text('Ticket #$_ticketId',
+                        style:
+                        const TextStyle(color: Colors.grey, fontSize: 12)),
+                        ],
+                        ),
+                        actions: [
+                        IconButton(
+                        icon: const Icon(Icons.refresh, color: Color(0xFF2563EB)),
+                        onPressed: _loadAll,
+                        tooltip: 'Vernieuwen',
+                        ),
+                        ],
+                        ),
+                        body: SafeArea(
+                        child: Column(
+                        children: [
+                        if (_error != null) _ErrorBanner(
+                        message: _error!,
+                        onDismiss: () => setState(() => _error = null),
+                        ),
+                        Expanded(child: _buildList()),
+                        _buildInputBar(),
+                        ],
+                        ),
+                        ),
+                        );
+                        }
+
+                        Widget _buildList() {
+                        if (_loading) return const Center(child: CircularProgressIndicator());
+                        if (_messages.isEmpty) {
+                        return const Center(
+                        child: Text('Nog geen berichten.',
+                        style: TextStyle(color: Colors.grey)),
+                        );
+                        }
+                        return ListView.builder(
+                        controller: _scrollCtrl,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        itemCount: _messages.length,
+                        itemBuilder: (_, i) => _ChatBubble(message: _messages[i]),
+                        );
+                        }
+
+                        Widget _buildInputBar() {
+                        return Container(
+                        padding: const EdgeInsets.all(12),
+                        color: Colors.white,
+                        child: Row(
+                        children: [
+                        Expanded(
+                        child: TextField(
+                        controller: _inputCtrl,
+                        enabled: !_sending,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(),
+                        maxLines: null,
+                        decoration: InputDecoration(
+                        hintText: 'Typ een bericht...',
+                        filled: true,
+                        fillColor: const Color(0xFFF3F4F6),
+                        border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                        ),
+                        ),
+                        ),
+                        const SizedBox(width: 8),
+                        _sending
+                        ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                        : IconButton(
+                        icon: const Icon(Icons.send, color: Color(0xFF2563EB)),
+                        onPressed: _send,
+                        ),
+                        ],
+                        ),
+                        );
+                        }
+                        }
+
+                        // ─────────────────────────────────────────────────────────────────────────────
+                        // WIDGETS
+                        // ─────────────────────────────────────────────────────────────────────────────
+
+                        class _ErrorBanner extends StatelessWidget {
+                        final String message;
+                        final VoidCallback onDismiss;
+                        const _ErrorBanner({required this.message, required this.onDismiss});
+
+                        @override
+                        Widget build(BuildContext context) {
+                        return Container(
+                        width: double.infinity,
+                        color: Colors.red.shade100,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Row(
+                        children: [
+                        Icon(Icons.error_outline, color: Colors.red.shade700, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                        child: Text(message,
+                        style: TextStyle(color: Colors.red.shade800, fontSize: 13)),
+                        ),
+                        IconButton(
+                        icon: Icon(Icons.close, size: 16, color: Colors.red.shade700),
+                        onPressed: onDismiss,
+                        ),
+                        ],
+                        ),
+                        );
+                        }
+                        }
+
+                        class _ChatBubble extends StatelessWidget {
+                        final ChatMessage message;
+                        const _ChatBubble({required this.message});
+
+                        @override
+                        Widget build(BuildContext context) {
+                        final isMe = message.isFromCustomer;
+
+                        return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                        mainAxisAlignment:
+                        isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                        if (!isMe) ...[
+                        const CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.blue,
+                        child: Icon(Icons.headset_mic, color: Colors.white, size: 18),
+                        ),
+                        const SizedBox(width: 8),
+                        ],
+                        Flexible(
+                        child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                        color: isMe ? const Color(0xFF2563EB) : Colors.white,
+                        borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.circular(isMe ? 16 : 4),
+                        bottomRight: Radius.circular(isMe ? 4 : 16),
+                        ),
+                        boxShadow: [
+                        BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                        ),
+                        ],
+                        ),
+                        child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                        Text(
+                        message.text,
+                        style: TextStyle(
+                        color: isMe ? Colors.white : Colors.black87,
+                        fontSize: 15,
+                        ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                        message.timeLabel,
+                        style: TextStyle(
+                        color: isMe ? Colors.white60 : Colors.black38,
+                        fontSize: 10,
+                        ),
+                        ),
+                        ],
+                        ),
+                        ),
+                        ),
+                        if (isMe) ...[
+                        const SizedBox(width: 8),
+                        const CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Color(0xFF9CA3AF),
+                        child: Icon(Icons.person, color: Colors.white, size: 18),
+                        ),
+                        ],
+                        ],
+                        ),
+                        );
+                        }
+                        }
