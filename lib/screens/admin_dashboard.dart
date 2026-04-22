@@ -26,12 +26,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _loadDashboardData() async {
     setState(() => _isLoading = true);
     
-    // 1. Laad echte naam uit SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final String storedName = prefs.getString('user_name') ?? '';
     final String email = prefs.getString('user_email') ?? '';
     
-    // 2. Haal statistieken uit de database
     final stats = await _apiService.fetchDashboardData();
 
     if (mounted) {
@@ -39,14 +37,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
         if (storedName.isNotEmpty) {
           _userName = storedName;
         } else if (email.isNotEmpty) {
-          // Fallback naar email als naam ontbreekt
           _userName = email.split('@')[0];
           _userName = _userName[0].toUpperCase() + _userName.substring(1);
         } else {
-          _userName = 'Admin';
+          _userName = 'Gebruiker';
         }
         
-        // Update de statistieken
         _openCount = stats['open'] ?? 0;
         _inProgressCount = stats['in_progress'] ?? 0;
         _resolvedCount = stats['resolved'] ?? 0;
@@ -105,9 +101,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 32),
 
-                // Welcome Text - NU MET ECHTE NAAM
                 Text(
-                  'Welcome, $_userName',
+                  'Welkom, $_userName',
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -116,7 +111,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Everything is running smoothly.',
+                  'Alles draait soepel.',
                   style: TextStyle(
                     fontSize: 16,
                     color: Color(0xFF64748B),
@@ -124,56 +119,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 32),
 
-                // Status Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'CURRENT STATUS',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF64748B).withOpacity(0.7),
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'SYSTEM LIVE',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF10B981),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Status Cards
-                _buildStatusCard('Open', _openCount.toString(), const Color(0xFF3B82F6), Icons.confirmation_number_outlined, const Color(0xFFEFF6FF)),
-                const SizedBox(height: 16),
-                _buildStatusCard('In Progress', _inProgressCount.toString(), const Color(0xFFB45309), Icons.pending_outlined, const Color(0xFFFFFBEB)),
-                const SizedBox(height: 16),
-                _buildStatusCard('Resolved', _resolvedCount.toString(), const Color(0xFF10B981), Icons.check_circle_outline, const Color(0xFFECFDF5)),
-                
-                const SizedBox(height: 32),
-
                 // Quick Actions
                 Text(
-                  'QUICK ACTIONS',
+                  'SNELLE ACTIES',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -186,30 +134,58 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildQuickAction(
-                      'New Ticket', 
-                      Icons.add, 
+                      'Scan QR', 
+                      Icons.qr_code_scanner, 
                       const Color(0xFFEFF6FF), 
                       const Color(0xFF3B82F6),
-                      onTap: () => Navigator.pushNamed(context, '/create-ticket'),
-                    ),
-                    _buildQuickAction(
-                      'View All', 
-                      Icons.grid_view, 
-                      const Color(0xFFF1F5F9), 
-                      const Color(0xFF475569),
-                      onTap: () {
-                        // Afgehandeld door MainScreen
+                      onTap: () async {
+                        final result = await Navigator.pushNamed(context, '/qr-scanner');
+                        if (result != null && mounted) {
+                          Navigator.pushNamed(
+                            context, 
+                            '/create-ticket', 
+                            arguments: result,
+                          );
+                        }
                       },
                     ),
                     _buildQuickAction(
-                      'Insights', 
-                      Icons.bar_chart, 
+                      'Nieuw Ticket', 
+                      Icons.add_circle_outline, 
                       const Color(0xFFF1F5F9), 
                       const Color(0xFF475569),
-                      onTap: () {},
+                      onTap: () => Navigator.pushNamed(context, '/create-ticket'),
+                    ),
+                    _buildQuickAction(
+                      'Support', 
+                      Icons.chat_bubble_outline, 
+                      const Color(0xFFF1F5F9), 
+                      const Color(0xFF475569),
+                      onTap: () => Navigator.pushNamed(context, '/support-chat'),
                     ),
                   ],
                 ),
+                const SizedBox(height: 32),
+
+                // Status Row
+                Text(
+                  'HUIDIGE STATUS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF64748B).withOpacity(0.7),
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Status Cards
+                _buildStatusCard('Open', _openCount.toString(), const Color(0xFF3B82F6), Icons.confirmation_number_outlined, const Color(0xFFEFF6FF)),
+                const SizedBox(height: 16),
+                _buildStatusCard('In Behandeling', _inProgressCount.toString(), const Color(0xFFB45309), Icons.pending_outlined, const Color(0xFFFFFBEB)),
+                const SizedBox(height: 16),
+                _buildStatusCard('Opgelost', _resolvedCount.toString(), const Color(0xFF10B981), Icons.check_circle_outline, const Color(0xFFECFDF5)),
+
                 const SizedBox(height: 80),
               ],
             ),

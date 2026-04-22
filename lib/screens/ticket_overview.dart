@@ -25,12 +25,16 @@ class _TicketOverviewState extends State<TicketOverview> {
 
   Future<void> _loadTickets() async {
     setState(() => _isLoading = true);
-    final tickets = await _apiService.fetchAllTickets();
-    if (mounted) {
-      setState(() {
-        _allTickets = tickets;
-        _isLoading = false;
-      });
+    try {
+      final tickets = await _apiService.fetchAllTickets();
+      if (mounted) {
+        setState(() {
+          _allTickets = tickets;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -189,10 +193,28 @@ class _TicketOverviewState extends State<TicketOverview> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/create-ticket'),
-        backgroundColor: const Color(0xFF3B82F6),
-        child: const Icon(Icons.add, color: Colors.white, size: 28),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'scan_btn',
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/qr-scanner');
+              if (result != null && mounted) {
+                Navigator.pushNamed(context, '/create-ticket', arguments: result);
+              }
+            },
+            backgroundColor: Colors.orange,
+            child: const Icon(Icons.qr_code_scanner, color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            heroTag: 'add_btn',
+            onPressed: () => Navigator.pushNamed(context, '/create-ticket'),
+            backgroundColor: const Color(0xFF3B82F6),
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
+          ),
+        ],
       ),
     );
   }
@@ -219,7 +241,7 @@ class _TicketOverviewState extends State<TicketOverview> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                ticket.ticketId,
+                'TKT-${ticket.ticketId}',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
               ),
               Container(

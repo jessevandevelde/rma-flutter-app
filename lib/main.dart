@@ -7,7 +7,8 @@ import 'package:rma_app/screens/forgot_password_screen.dart';
 import 'package:rma_app/screens/admin_screen.dart';
 import 'package:rma_app/screens/support_chat.dart';
 import 'package:rma_app/screens/admin_dashboard.dart';
-import 'package:rma_app/screens/main_screen.dart'; // Import MainScreen
+import 'package:rma_app/screens/main_screen.dart';
+import 'package:rma_app/screens/qr_scanner_screen.dart';
 import 'package:rma_app/dev_menu.dart';
 
 void main() {
@@ -43,7 +44,8 @@ class MyApp extends StatelessWidget {
             '/admin': (context) => const AdminScreen(),
             '/support-chat': (context) => const SupportChatPage(),
             '/admin-dashboard': (context) => const AdminDashboard(),
-            '/main': (context) => const MainScreen(), // Register the missing route
+            '/main': (context) => const MainScreen(),
+            '/qr-scanner': (context) => const QRScannerScreen(),
           },
         ),
       ),

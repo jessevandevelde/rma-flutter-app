@@ -60,6 +60,18 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
+      if (scannedCode != null) {
+        // Gebruik de nieuwe Regex methode om de ID eruit te halen
+        _serialController.text = _cleanScannedCode(scannedCode) ?? scannedCode;
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _modelController.dispose();
     _serialController.dispose();
@@ -74,21 +86,31 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     super.dispose();
   }
 
-  // Haal alleen de ID uit de gescande code als het een URL is
+  // Verbeterde methode met REGEX om de ID uit de URL van de docent te halen
   String? _cleanScannedCode(String? code) {
     if (code == null || code.trim().isEmpty) return null;
     
-    String cleanId = code.trim();
-    try {
-      final uri = Uri.parse(cleanId);
-      if (uri.queryParameters.containsKey('id')) {
-        cleanId = uri.queryParameters['id']!;
-      }
-    } catch (e) {
-      // Geen URL, gebruik de originele (getrimde) code
+    String cleanValue = code.trim();
+    
+    // Regex zoekt naar 'id=' gevolgd door alles tot aan de volgende '&' of het einde
+    final RegExp regExp = RegExp(r'[?&]id=([^&]+)');
+    final match = regExp.firstMatch(cleanValue);
+    
+    if (match != null && match.groupCount >= 1) {
+      return match.group(1); // Geeft 'RMM-110028' terug
     }
     
-    return cleanId.isNotEmpty ? cleanId : null;
+    return cleanValue;
+  }
+
+  Future<void> _scanQRCode() async {
+    final result = await Navigator.pushNamed(context, '/qr-scanner');
+    if (result != null && mounted) {
+      setState(() {
+        // Maak de code schoon voordat deze in het tekstveld komt
+        _serialController.text = _cleanScannedCode(result.toString()) ?? result.toString();
+      });
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -112,8 +134,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     }
   }
 
-  Future<void> _handleFormSubmit(String? scannedCode) async {
-    // 1. Basis validatie: check of verplichte velden gevuld zijn
+  Future<void> _handleFormSubmit() async {
     if (_modelController.text.trim().isEmpty || 
         _serialController.text.trim().isEmpty || 
         _descriptionController.text.trim().isEmpty ||
@@ -134,15 +155,12 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     try {
       final userId = await Authenticatie().getUserId();
       
-      // DEBUG: Log wat we gaan versturen naar de console
-      debugPrint('--- Ticket Verzenden ---');
-      debugPrint('User ID: $userId');
-      debugPrint('Asset ID: ${_cleanScannedCode(scannedCode)}');
+      // Zorg dat we het 'schone' serienummer meesturen naar de backend (nog een extra check)
+      final cleanSerial = _cleanScannedCode(_serialController.text.trim()) ?? _serialController.text.trim();
 
-      // Mappen van de controllers naar de juiste Question IDs uit de database
       final List<Map<String, dynamic>> answers = [
         {'question_id': 6, 'answer': _modelController.text.trim()},
-        {'question_id': 7, 'answer': _serialController.text.trim()},
+        {'question_id': 7, 'answer': cleanSerial}, // HIER GAAT DE SCHONE ID NAAR DE DB
         {'question_id': 1, 'answer': _descriptionController.text.trim()},
         {'question_id': 2, 'answer': _frequencyController.text},
         {'question_id': 3, 'answer': _causeController.text},
@@ -156,8 +174,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
       final Ticket ticket = Ticket(
         ticketTypeId: 1,
-        // Zorg dat assetId null is als het een lege string is
-        assetId: (_cleanScannedCode(scannedCode)?.isEmpty ?? true) ? null : _cleanScannedCode(scannedCode),
+        assetId: cleanSerial,
         userId: userId,
         answers: answers,
       );
@@ -169,21 +186,19 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         if (success) {
           _showSuccessDialog();
         } else {
-          // De 500 error details worden nu geprint in de Debug Console door TicketService
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Server fout (500). Controleer de Debug Console voor details.'),
+              content: Text('Server fout (500). Ticket kon niet worden opgeslagen.'),
               backgroundColor: Colors.red,
             ),
           );
         }
       }
     } catch (e) {
-      debugPrint('Fout in _handleFormSubmit: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Er is een onverwachte fout opgetreden: $e')),
+          SnackBar(content: Text('Fout: $e')),
         );
       }
     }
@@ -220,8 +235,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String? scannedCode = ModalRoute.of(context)?.settings.arguments as String?;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -241,28 +254,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (scannedCode != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.qr_code, color: Colors.blue),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text('Gescande code: $scannedCode',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.blue)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
             _buildSectionHeader(Icons.info_outline, 'Intro'),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -279,7 +270,14 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             _buildTextField('Bijvoorbeeld: CF-XXXXXX of FZ-XXXXXX', _modelController),
             const SizedBox(height: 15),
             _buildLabel('Serienummer *'),
-            _buildTextField('Voer a.u.b. een serienummer in', _serialController),
+            _buildTextField(
+              'Voer a.u.b. een serienummer in', 
+              _serialController,
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.qr_code_scanner, color: Colors.blue),
+                onPressed: _scanQRCode,
+              ),
+            ),
             const SizedBox(height: 15),
             _buildLabel('Beschrijving van het probleem *'),
             _buildTextField('Beschrijf het probleem zo gedetailleerd mogelijk', _descriptionController, maxLines: 3),
@@ -349,7 +347,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: (_isChecked && !_isLoading) ? () => _handleFormSubmit(scannedCode) : null,
+                onPressed: (_isChecked && !_isLoading) ? _handleFormSubmit : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isChecked ? const Color(0xFF007AFF) : Colors.grey,
                   shape: RoundedRectangleBorder(
@@ -423,7 +421,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
   Widget _buildDropdownField(String hint, TextEditingController controller, List<String> options) {
     return DropdownButtonFormField<String>(
-      initialValue: options.contains(controller.text) ? controller.text : null,
+      value: options.contains(controller.text) ? controller.text : null,
       items: options.map((String option) {
         return DropdownMenuItem<String>(
           value: option,
