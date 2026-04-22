@@ -193,28 +193,10 @@ class _TicketOverviewState extends State<TicketOverview> {
           ],
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: 'scan_btn',
-            onPressed: () async {
-              final result = await Navigator.pushNamed(context, '/qr-scanner');
-              if (result != null && mounted) {
-                Navigator.pushNamed(context, '/create-ticket', arguments: result);
-              }
-            },
-            backgroundColor: Colors.orange,
-            child: const Icon(Icons.qr_code_scanner, color: Colors.white),
-          ),
-          const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'add_btn',
-            onPressed: () => Navigator.pushNamed(context, '/create-ticket'),
-            backgroundColor: const Color(0xFF3B82F6),
-            child: const Icon(Icons.add, color: Colors.white, size: 28),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.pushNamed(context, '/create-ticket'),
+        backgroundColor: const Color(0xFF3B82F6),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
   }

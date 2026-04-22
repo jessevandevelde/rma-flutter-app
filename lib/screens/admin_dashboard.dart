@@ -131,31 +131,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 16),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    _buildQuickAction(
-                      'Scan QR', 
-                      Icons.qr_code_scanner, 
-                      const Color(0xFFEFF6FF), 
-                      const Color(0xFF3B82F6),
-                      onTap: () async {
-                        final result = await Navigator.pushNamed(context, '/qr-scanner');
-                        if (result != null && mounted) {
-                          Navigator.pushNamed(
-                            context, 
-                            '/create-ticket', 
-                            arguments: result,
-                          );
-                        }
-                      },
-                    ),
                     _buildQuickAction(
                       'Nieuw Ticket', 
                       Icons.add_circle_outline, 
-                      const Color(0xFFF1F5F9), 
-                      const Color(0xFF475569),
+                      const Color(0xFFEFF6FF), 
+                      const Color(0xFF3B82F6),
                       onTap: () => Navigator.pushNamed(context, '/create-ticket'),
                     ),
+                    const SizedBox(width: 24),
                     _buildQuickAction(
                       'Support', 
                       Icons.chat_bubble_outline, 
