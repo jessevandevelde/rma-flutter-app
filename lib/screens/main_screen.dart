@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'admin_dashboard.dart';
 import 'ticket_overview.dart';
+import 'support_chat.dart'; // ← jouw bestaande chat pagina
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -13,12 +14,15 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   late int _selectedIndex;
 
-  // De lijst met pagina's die we in de tabs willen hebben
+  // Index 0 → HOME      → AdminDashboard
+  // Index 1 → TICKETS   → TicketOverview
+  // Index 2 → CHAT      → SupportChatPage
+  // Index 3 → PROFILE   → placeholder
   final List<Widget> _pages = [
     const AdminDashboard(),
     const TicketOverview(),
-    const Center(child: Text('Chat Page - Coming Soon')),
-    const Center(child: Text('Profile Page - Coming Soon')),
+    const SupportChatPage(),                                  // ← index 2
+    const Center(child: Text('Profile Page - Coming Soon')), // ← index 3
   ];
 
   @override
@@ -60,10 +64,10 @@ class _MainScreenState extends State<MainScreen> {
           selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
           unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'HOME'),
-            BottomNavigationBarItem(icon: Icon(Icons.confirmation_number_outlined), label: 'TICKETS'),
-            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'CHAT'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'PROFILE'),
+            BottomNavigationBarItem(icon: Icon(Icons.home_filled),                label: 'HOME'),    // → index 0
+            BottomNavigationBarItem(icon: Icon(Icons.confirmation_number_outlined),label: 'TICKETS'), // → index 1
+            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline),         label: 'CHAT'),    // → index 2
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline),              label: 'PROFILE'), // → index 3
           ],
         ),
       ),
